@@ -16,6 +16,8 @@
   }
 }
 body{
+  @apply antialiased;
+  @apply bg-[#0e0e0e];
   @apply overflow-x-hidden;
 }
 
