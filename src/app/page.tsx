@@ -108,8 +108,8 @@ export default function AlignmentContainer() {
                         </a>
                     </div>
                 </div>
-                <div className="w-full bg-gradient-to-t from-cyan-950 to-[#0e0e0e] h-full px-10 py-5 text-white flex items-center justify-center gap-5">
-                    <h1>© 2024-2030 RGB Logic - Todos os Direitos reservados</h1>
+                <div className="w-full bg-gradient-to-t from-cyan-950 to-[#0e0e0e] h-full px-5 md:px-10 py-5 text-white flex items-center justify-center gap-1 sm:gap-5">
+                    <h1 className="text-xs md:text-md">© 2024-2030 RGB Logic - Todos os Direitos reservados</h1>
                     <a className="underline hover:text-blue-500 transition-all" href="https://github.com/sirguilherme97/" target="blank">Github</a>
                 </div>
             </div>
