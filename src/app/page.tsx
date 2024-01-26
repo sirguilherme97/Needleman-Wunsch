@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 import React, { useState } from "react";
 import NeedlemanWunschAlignment from "../components/Script"; // Certifique-se de importar corretamente o componente NeedlemanWunschAlignment
 
