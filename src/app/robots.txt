@@ -1,5 +1,11 @@
-User-Agent: *
-Allow: /
+User-agent: *
+Disallow: /admin/
 Disallow: /private/
-
-Sitemap: https://acme.com/sitemap.xml
+Disallow: /confidential/
+Disallow: /temp/
+Disallow: /cgi-bin/
+Disallow: /scripts/
+Disallow: /tmp/
+Disallow: /logs/
+Disallow: /cache/
+Disallow: /login/
