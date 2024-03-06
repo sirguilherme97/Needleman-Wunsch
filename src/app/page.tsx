@@ -28,7 +28,7 @@ export default function AlignmentContainer() {
                 </div>
                 <div className="text-[#ededed] cursor-default grid grid-cols-1 md:grid-cols-2 pt-10 max-w-xl md:max-w-none px-5 md:px-10 md:py-32 bg-[#0e0e0e] w-full h-auto">
                     <div className="col-span-2 md:col-span-1 sm:mr-2">
-                        <h1 className="font-bold text-white">Algoritmo de Needleman-Wunsch: Uma Abordagem Detalhada</h1>
+                        <h1 className="font-bold text-white text-xl">Algoritmo de Needleman-Wunsch: Abordagem </h1>
                         <p className="mt-3 max-w-2xl">O algoritmo de Needleman-Wunsch é uma técnica fundamental na bioinformática, amplamente utilizada para realizar alinhamento global de sequências de DNA, RNA ou proteínas. Desenvolvido por Saul B. Needleman e Christian D. Wunsch em 1970, este algoritmo estabeleceu as bases para muitos outros algoritmos de alinhamento subsequente. Abaixo, apresentamos uma explicação detalhada deste algoritmo, destacando seus principais conceitos e etapas.</p>
                     </div>
                     <div className="col-span-2 md:col-span-1">
@@ -36,20 +36,20 @@ export default function AlignmentContainer() {
                         <p className="mt-3 max-w-2xl">O algoritmo de Needleman-Wunsch é projetado para encontrar o melhor alinhamento global entre duas sequências, onde "melhor" é definido como o alinhamento que maximiza a similaridade entre as sequências. Ele atribui pontuações para casamentos, mismatches e gaps (lacunas) e calcula o melhor alinhamento possível dentro desses parâmetros.</p>
                     </div>
                     <div className="col-span-2">
-                        <h2 className="mt-10 font-bold text-white ">Etapas do Algoritmo</h2>
+                        <h2 className="mt-10 font-bold text-white text-xl">Etapas do Algoritmo</h2>
                         <p className="mt-3 "><span className="font-bold text-white">Inicialização da Matriz de Pontuação: </span> A primeira etapa do algoritmo envolve a criação de uma matriz de pontuação, onde cada célula representa o alinhamento parcial entre as subsequências. A matriz é inicializada com valores baseados nas penalidades para casamentos, mismatches e gaps.</p>
                         <p className="mt-0 "><span className="font-bold text-white">Preenchimento da Matriz:</span>A matriz é então preenchida iterativamente. Cada célula é preenchida com o valor máximo obtido considerando os valores das células adjacentes, juntamente com as penalidades por casamento, mismatch e gap. Este preenchimento ocorre em todas as células da matriz.</p>
                         <p className="mt-0 "><span className="font-bold text-white">Rastreamento do Caminho Ótimo: </span> Depois que a matriz é preenchida, o próximo passo é rastrear o caminho ótimo através da matriz. Isso é feito retrocedendo da célula final para a célula inicial, seguindo o caminho que maximiza a pontuação total do alinhamento.</p>
                         <p className="mt-0 "><span className="font-bold text-white">Construção do Alinhamento:</span> Com o caminho ótimo determinado, o alinhamento final pode ser construído. Isso envolve associar os caracteres das sequências de entrada de acordo com o caminho ótimo, marcando casamentos, mismatches e gaps conforme apropriado.</p>
                     </div>
                     <div className="col-span-2">
-                        <h2 className="font-bold text-white mt-10">Pontuações e Penalidades</h2>
+                        <h2 className="font-bold text-white mt-10 text-xl">Pontuações e Penalidades</h2>
                         <p className="mt-3"><span className="font-bold text-green-500">Casamento (Match):</span> Pontuação atribuída quando os caracteres nas posições correspondentes das sequências são iguais.</p>
                         <p className="mt-0"><span className="font-bold text-yellow-500">Mismatch (Não Casamento):</span> Penalidade atribuída quando os caracteres nas posições correspondentes das sequências são diferentes.</p>
                         <p className="mt-0"><span className="font-bold text-red-500">Gap (Lacuna):</span> Penalidade atribuída quando um espaço é inserido em uma das sequências para realizar o alinhamento.</p>
                     </div>
                     <div className="col-span-2 md:col-span-1 sm:mr-2">
-                        <h2 className="mt-10 font-bold text-white ">Aplicações</h2>
+                        <h2 className="mt-10 font-bold text-white text-xl">Aplicações</h2>
                         <p className="mt-3 max-w-lg">O algoritmo de Needleman-Wunsch é utilizado em uma variedade de aplicações na bioinformática, incluindo:</p>
                         <p className="mt-3 max-w-lg ">Comparação de sequências de DNA, RNA e proteínas.</p>
                         <p>Estudo de homologia e evolução molecular.</p>
@@ -57,13 +57,13 @@ export default function AlignmentContainer() {
                         <p>Predição de estruturas de proteínas e modelagem molecular.</p>
                     </div>
                     <div className="col-span-2 md:col-span-1">
-                        <h2 className="mt-10 font-bold text-white">Conclusão</h2>
+                        <h2 className="mt-10 font-bold text-white text-xl">Conclusão</h2>
                         <p className="mt-3">O algoritmo de Needleman-Wunsch é uma ferramenta essencial na análise de sequências biológicas, permitindo a comparação e alinhamento de sequências para entender melhor sua função e evolução. Sua compreensão é fundamental para muitas tarefas na bioinformática e biologia computacional.</p>
                     </div>
-                    <div className="col-span-2 px-10">
+                    <div className="col-span-2 px-10 pt-20">
                         <h1 className="text-center py-10 text-white font-bold text-xl">Links de Interesse</h1>
                     </div>
-                    <div className="col-span-2 grid sm:grid-cols-2 md:grid-cols-3 gap-3 pt-5">
+                    <div className="col-span-2 grid sm:grid-cols-2 md:grid-cols-3 gap-3 pt-5 z-3">
                         <a href="https://www.rcsb.org/" target="blank">
                             <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
                                 <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">Protein DataBase</h1>
