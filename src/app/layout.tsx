@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
-
+import { Analytics } from "@vercel/analytics/react"
 export const metadata: Metadata = {
   title: "Needleman-Wunsch Algorithm",
   openGraph: {
@@ -23,6 +23,7 @@ export default function RootLayout({
       <head>
       <meta name="google-adsense-account" content="ca-pub-2325936665567762"/>
       </head>
+      <Analytics/>
       <body className={inter.className}>{children}</body>
     </html>
   );
