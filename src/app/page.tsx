@@ -18,7 +18,7 @@ export default function AlignmentContainer() {
 
     return (
         <>
-            <div className="w-screen bg-gradient-to-l from-cyan-950 to-black h-auto py-5 flex flex-col items-center justify-start   text-white">
+            <div className="w-screen bg-gradient-to-l from-cyan-950 to-black h-auto pt-5 flex flex-col items-center justify-start   text-white">
                 <h1 className="text-white font-bold text-lg">Needleman-Wunsch Algorithm</h1>
                 <h2 className="text-white font-medium text-lg">Sequence Alignment</h2>
                 <div className="w-full max-w-2xl p-6 rounded-lg shadow-lg">
