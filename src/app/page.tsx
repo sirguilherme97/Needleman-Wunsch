@@ -6,25 +6,90 @@ import NeedlemanWunschAlignment from "../components/Script"; // Make sure to cor
 export default function AlignmentContainer() {
     const [seq1, setSeq1] = useState("");
     const [seq2, setSeq2] = useState("");
+    const [matchScore, setMatchScore] = useState(1); // Novo: score para match
+    const [gapPenalty, setGapPenalty] = useState(-1);
+    const [mismatchPenalty, setMismatchPenalty] = useState(-1);
 
-    const handleSeq1Change = (event:any) => {
-        setSeq1(event.target.value);
-    };
+    const handleSeq1Change = (event: any) => setSeq1(event.target.value.toUpperCase());
+    const handleSeq2Change = (event: any) => setSeq2(event.target.value.toUpperCase());
+    const handleMatchScoreChange = (event: any) => setMatchScore(Number(event.target.value));
+    const handleGapPenaltyChange = (event: any) => setGapPenalty(Number(event.target.value));
+    const handleMismatchPenaltyChange = (event: any) => setMismatchPenalty(Number(event.target.value));
 
-    const handleSeq2Change = (event:any) => {
-        setSeq2(event.target.value);
-    };
     return (
         <>
-            <div className="w-screen bg-gradient-to-l from-cyan-950 to-black h-screen pt-5 flex flex-col items-center justify-start  text-white">
+            <div className="w-screen bg-gradient-to-l from-cyan-950 to-black h-auto py-5 flex flex-col items-center justify-start   text-white">
                 <h1 className="text-white font-bold text-lg">Needleman-Wunsch Algorithm</h1>
                 <h2 className="text-white font-medium text-lg">Sequence Alignment</h2>
-                <div className="mt-5 flex flex-col gap-4">
-                    <input type="text" className="w-72 rounded-md md:min-w-96 h-10  p-2 text-black placeholder:text-black" placeholder="Sequence 1" value={seq1} onChange={handleSeq1Change} />
-                    <input type="text" className="w-72 rounded-md md:min-w-96 h-10  p-2 text-black placeholder:text-black" placeholder="Sequence 2" value={seq2} onChange={handleSeq2Change} />
+                <div className="w-full max-w-2xl p-6 rounded-lg shadow-lg">
+                    <div className="grid grid-cols-1 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Sequence 1</label>
+                                <input
+                                    type="text"
+                                    className="w-full h-10 p-2 rounded-md text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                    placeholder="e.g., ATCG"
+                                    value={seq1}
+                                    onChange={handleSeq1Change}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Sequence 2</label>
+                                <input
+                                    type="text"
+                                    className="w-full h-10 p-2 rounded-md text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                    placeholder="e.g., AGCG"
+                                    value={seq2}
+                                    onChange={handleSeq2Change}
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Match Score</label>
+                                <input
+                                    type="number"
+                                    className="w-full h-10 p-2 rounded-md text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                    placeholder="e.g., 1"
+                                    value={matchScore}
+                                    onChange={handleMatchScoreChange}
+                                    min="0"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Gap Penalty</label>
+                                <input
+                                    type="number"
+                                    className="w-full h-10 p-2 rounded-md text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                    placeholder="e.g., -1"
+                                    value={gapPenalty}
+                                    onChange={handleGapPenaltyChange}
+                                    max="0"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Mismatch Penalty</label>
+                                <input
+                                    type="number"
+                                    className="w-full h-10 p-2 rounded-md text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                    placeholder="e.g., -1"
+                                    value={mismatchPenalty}
+                                    onChange={handleMismatchPenaltyChange}
+                                    max="0"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div className="bg-gradient-to-l from-cyan-950 to-black  h-auto pt-20 flex items-start justify-start pb-20">
-                    <NeedlemanWunschAlignment seq1={seq1} seq2={seq2} gapPenalty={-1} mismatchPenalty={-1} />
+                <div className="my-10 mg:my-20 w-full">
+                    <NeedlemanWunschAlignment
+                        seq1={seq1}
+                        seq2={seq2}
+                        matchScore={matchScore}
+                        gapPenalty={gapPenalty}
+                        mismatchPenalty={mismatchPenalty}
+                    />
                 </div>
                 <div className="text-[#ededed] cursor-default grid grid-cols-1 md:grid-cols-2 pt-10 max-w-xl md:max-w-none px-5 md:px-10 md:py-32 bg-[#0e0e0e] w-full h-auto">
                     <div className="col-span-2 md:col-span-1 sm:mr-2">
