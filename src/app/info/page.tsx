@@ -44,6 +44,8 @@ function InfoPageContent() {
   const [chunkSize, setChunkSize] = useState(50)
   const [renderedChunks, setRenderedChunks] = useState<number[]>([0])
   const [isChunkLoading, setIsChunkLoading] = useState(false)
+  // Novo estado para controlar o zoom no Similarity Profile e Alignment Regions
+  const [zoomRange, setZoomRange] = useState<{start: number, end: number} | null>(null)
 
   useEffect(() => {
     // Retrieve parameters from URL
@@ -1600,9 +1602,76 @@ function InfoPageContent() {
       // Get all unique characters
       const allChars = Array.from(new Set([...alignedSeq1, ...alignedSeq2])).filter(char => char !== '-');
       
+      // Função para aplicar zoom nos gráficos
+      const handleZoomChange = (start: number, end: number) => {
+        setZoomRange({ start, end });
+      };
+      
+      // Definir os dados visíveis com base no zoom
+      const visibleData = zoomRange 
+        ? similarityData.slice(zoomRange.start, zoomRange.end + 1)
+        : similarityData;
+      
+      // Calcular as marcas do eixo x com base nos dados visíveis
+      const xLabels = zoomRange
+        ? [
+            zoomRange.start,
+            Math.round(zoomRange.start + (zoomRange.end - zoomRange.start) * 0.25),
+            Math.round(zoomRange.start + (zoomRange.end - zoomRange.start) * 0.5),
+            Math.round(zoomRange.start + (zoomRange.end - zoomRange.start) * 0.75),
+            zoomRange.end
+          ]
+        : [
+            0,
+            Math.round(alignedSeq1.length * 0.25),
+            Math.round(alignedSeq1.length * 0.5),
+            Math.round(alignedSeq1.length * 0.75),
+            alignedSeq1.length
+          ];
+
       return (
         <div className="bg-gray-800 rounded-lg p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Botões de zoom compartilhados */}
+            <div className="md:col-span-2 flex gap-2 mb-2">
+              <button
+                onClick={() => setZoomRange(null)}
+                className={`px-3 py-1 text-xs rounded ${!zoomRange ? 'bg-cyan-600' : 'bg-gray-700'}`}
+              >
+                Visualizar Tudo
+              </button>
+              {alignedSeq1.length > 10 && (
+                <>
+                  <button
+                    onClick={() => handleZoomChange(0, Math.min(30, alignedSeq1.length - 1))}
+                    className={`px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600`}
+                  >
+                    Início (30)
+                  </button>
+                  <button
+                    onClick={() => {
+                      const midPoint = Math.floor(alignedSeq1.length / 2);
+                      handleZoomChange(Math.max(0, midPoint - 15), Math.min(alignedSeq1.length - 1, midPoint + 15));
+                    }}
+                    className={`px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600`}
+                  >
+                    Meio (30)
+                  </button>
+                  <button
+                    onClick={() => handleZoomChange(Math.max(0, alignedSeq1.length - 30), alignedSeq1.length - 1)}
+                    className={`px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600`}
+                  >
+                    Fim (30)
+                  </button>
+                </>
+              )}
+              {zoomRange && (
+                <div className="ml-auto text-xs text-gray-400">
+                  Zoom: posições {zoomRange.start+1} - {zoomRange.end+1}
+                </div>
+              )}
+            </div>
+
             {/* Comparative Overview Chart */}
             <div className="bg-gray-900 rounded-lg p-4">
               <h3 className="text-md font-semibold mb-3">Alignment Composition</h3>
@@ -1709,26 +1778,30 @@ function InfoPageContent() {
                 
                 {/* Position markers */}
                 <div className="absolute w-full bottom-0 left-0 flex justify-between text-xs text-gray-400">
-                  {[0, 0.25, 0.5, 0.75, 1].map(fraction => (
-                    <div key={fraction} className="flex flex-col items-center">
+                  {xLabels.map(position => (
+                    <div key={position} className="flex flex-col items-center">
                       <div className="h-1 w-px bg-gray-500 mb-1"></div>
-                      {Math.round(fraction * alignedSeq1.length)}
+                      {position + 1}
                     </div>
                   ))}
                 </div>
                 
                 {/* Plot similarity points and rolling average */}
-                <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${alignedSeq1.length} 2`} preserveAspectRatio="none">
+                <svg className="absolute inset-0 w-full h-full" 
+                     viewBox={zoomRange 
+                       ? `${zoomRange.start} 0 ${zoomRange.end - zoomRange.start + 1} 2` 
+                       : `0 0 ${alignedSeq1.length} 2`} 
+                     preserveAspectRatio="none">
                   {/* Rolling average line */}
                   <polyline 
-                    points={similarityData.map(d => `${d.position - 1},${1 - (d.rollingAverage + 1) / 2}`).join(' ')}
+                    points={visibleData.map(d => `${d.position - 1},${1 - (d.rollingAverage + 1) / 2}`).join(' ')}
                     fill="none"
                     stroke="rgba(14, 165, 233, 0.7)"
                     strokeWidth="0.02"
                   />
                   
                   {/* Individual points */}
-                  {similarityData.map((d, i) => (
+                  {visibleData.map((d, i) => (
                     <circle 
                       key={i}
                       cx={d.position - 1}
@@ -1764,25 +1837,38 @@ function InfoPageContent() {
               </div>
             </div>
 
-            {/* Conservation Score */}
+            {/* Conservation Score / Alignment Regions */}
             <div className="bg-gray-900 rounded-lg p-4 md:col-span-2">
               <h3 className="text-md font-semibold mb-3">Alignment Regions</h3>
               <div className="w-full h-10 flex">
-                {similarityData.map((d, i) => {
+                {visibleData.map((d, i) => {
                   let color = 'bg-gray-700';
                   
                   // Check for conserved regions (consistent matching)
-                  if (i > 0 && i < similarityData.length - 1) {
-                    if (d.rollingAverage > 0.7) {
-                      color = 'bg-green-700';
+                  if (i > 0 && i < visibleData.length - 1) {
+                    // Sistema de cores mais detalhado e exato
+                    if (d.rollingAverage > 0.9) {
+                      color = 'bg-green-800'; // Altamente conservado (90-100%)
+                    } else if (d.rollingAverage > 0.7) {
+                      color = 'bg-green-600'; // Muito conservado (70-90%)
+                    } else if (d.rollingAverage > 0.5) {
+                      color = 'bg-green-500'; // Conservado (50-70%)
                     } else if (d.rollingAverage > 0.3) {
-                      color = 'bg-green-600/50';
-                    } else if (d.rollingAverage < -0.3) {
-                      color = 'bg-red-600/50';
-                    } else if (d.rollingAverage < -0.7) {
-                      color = 'bg-red-700';
+                      color = 'bg-green-400'; // Moderadamente conservado (30-50%)
+                    } else if (d.rollingAverage > 0.1) {
+                      color = 'bg-yellow-400'; // Levemente conservado (10-30%)
+                    } else if (d.rollingAverage > -0.1) {
+                      color = 'bg-yellow-600'; // Neutro (-10% a 10%)
+                    } else if (d.rollingAverage > -0.3) {
+                      color = 'bg-orange-500'; // Levemente divergente (-30% a -10%)
+                    } else if (d.rollingAverage > -0.5) {
+                      color = 'bg-orange-700'; // Moderadamente divergente (-50% a -30%)
+                    } else if (d.rollingAverage > -0.7) {
+                      color = 'bg-red-500'; // Divergente (-70% a -50%)
+                    } else if (d.rollingAverage > -0.9) {
+                      color = 'bg-red-600'; // Muito divergente (-90% a -70%)
                     } else {
-                      color = 'bg-yellow-600/50';
+                      color = 'bg-red-800'; // Altamente divergente (-100% a -90%)
                     }
                   }
                   
@@ -1790,39 +1876,75 @@ function InfoPageContent() {
                     <div
                       key={i}
                       className={`h-full ${color}`}
-                      style={{ width: `${100 / alignedSeq1.length}%` }}
-                      title={`Position ${i+1}: ${alignedSeq1[i]}/${alignedSeq2[i]}`}
+                      style={{ width: `${100 / visibleData.length}%` }}
+                      title={`Position ${d.position}: ${alignedSeq1[d.position-1]}/${alignedSeq2[d.position-1]}, Conservation: ${(d.rollingAverage * 100).toFixed(1)}%`}
                     ></div>
                   );
                 })}
               </div>
               <div className="flex justify-between text-xs text-gray-400 mt-2">
-                <div>1</div>
-                <div>{Math.round(alignedSeq1.length / 4)}</div>
-                <div>{Math.round(alignedSeq1.length / 2)}</div>
-                <div>{Math.round(3 * alignedSeq1.length / 4)}</div>
-                <div>{alignedSeq1.length}</div>
+                {xLabels.map(position => (
+                  <div key={position}>{position + 1}</div>
+                ))}
               </div>
-              <div className="flex justify-between text-xs text-gray-400 mt-3">
+              <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-11 gap-y-2 text-xs text-gray-400 mt-3 text-center">
+                <div className="flex flex-col items-center">
+                  <div className="w-full h-3 bg-green-800 mb-1 rounded"></div>
+                  <span>90-100%</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-full h-3 bg-green-600 mb-1 rounded"></div>
+                  <span>70-90%</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-full h-3 bg-green-500 mb-1 rounded"></div>
+                  <span>50-70%</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-full h-3 bg-green-400 mb-1 rounded"></div>
+                  <span>30-50%</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-full h-3 bg-yellow-400 mb-1 rounded"></div>
+                  <span>10-30%</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-full h-3 bg-yellow-600 mb-1 rounded"></div>
+                  <span>±10%</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-full h-3 bg-orange-500 mb-1 rounded"></div>
+                  <span>-10-30%</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-full h-3 bg-orange-700 mb-1 rounded"></div>
+                  <span>-30-50%</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-full h-3 bg-red-500 mb-1 rounded"></div>
+                  <span>-50-70%</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-full h-3 bg-red-600 mb-1 rounded"></div>
+                  <span>-70-90%</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-full h-3 bg-red-800 mb-1 rounded"></div>
+                  <span>-90-100%</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-gray-400 mt-4">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-700 mr-1 rounded"></div>
-                  <span>Highly Conserved</span>
+                  <span className="font-semibold text-green-500">Conservado:</span>
+                  <span className="ml-1">sequências similares, provável importância funcional</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-600/50 mr-1 rounded"></div>
-                  <span>Conserved</span>
+                  <span className="font-semibold text-yellow-500">Variável:</span>
+                  <span className="ml-1">regiões com variabilidade moderada</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-yellow-600/50 mr-1 rounded"></div>
-                  <span>Variable</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-red-600/50 mr-1 rounded"></div>
-                  <span>Divergent</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-red-700 mr-1 rounded"></div>
-                  <span>Highly Divergent</span>
+                  <span className="font-semibold text-red-500">Divergente:</span>
+                  <span className="ml-1">regiões com alta diferenciação ou gaps</span>
                 </div>
               </div>
             </div>
