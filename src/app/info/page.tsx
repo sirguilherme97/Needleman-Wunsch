@@ -30,6 +30,7 @@ function InfoPageContent() {
   const [matrixViewMode, setMatrixViewMode] = useState<'standard' | 'heatmap' | 'arrows' | 'colorful' | '3d'>('standard')
   const [showDifferenceHighlight, setShowDifferenceHighlight] = useState(false)
   const [alignmentViewMode, setAlignmentViewMode] = useState<'blocks' | 'linear' | 'detailed' | 'compact' | 'interactive'>('blocks')
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   useEffect(() => {
     // Retrieve parameters from URL
@@ -628,8 +629,6 @@ function InfoPageContent() {
     
     // Visualização interativa
     if (alignmentViewMode === 'interactive') {
-      const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-      
       return (
         <div className="bg-gray-800 rounded-lg p-5">
           <div className="flex justify-between items-center mb-4">
@@ -963,7 +962,7 @@ function InfoPageContent() {
                     {matrixViewMode === '3d' && (
                       <>
                         Visualização tridimensional onde a altura representa o valor de cada célula.
-                        Ajuda a identificar visualmente as "montanhas" e "vales" na matriz de pontuação.
+                        Ajuda a identificar visualmente as &quot;montanhas&quot; e &quot;vales&quot; na matriz de pontuação.
                       </>
                     )}
                   </p>
