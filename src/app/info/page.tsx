@@ -31,6 +31,7 @@ function InfoPageContent() {
   const [showDifferenceHighlight, setShowDifferenceHighlight] = useState(false)
   const [alignmentViewMode, setAlignmentViewMode] = useState<'blocks' | 'linear' | 'detailed' | 'compact' | 'interactive'>('blocks')
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [hoverIntentTimeout, setHoverIntentTimeout] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     // Retrieve parameters from URL
@@ -204,6 +205,44 @@ function InfoPageContent() {
       length
     }
   }
+
+  // Função para lidar com o hover com delay para evitar glitches
+  const handleHoverEnter = (index: number) => {
+    // Cancelar qualquer timeout anterior
+    if (hoverIntentTimeout) {
+      clearTimeout(hoverIntentTimeout);
+    }
+    
+    // Definir novo timeout para atualizar o índice hover
+    const timeout = setTimeout(() => {
+      setHoveredIndex(index);
+    }, 50); // pequeno delay para evitar flickering
+    
+    setHoverIntentTimeout(timeout);
+  };
+  
+  const handleHoverLeave = () => {
+    // Cancelar qualquer timeout anterior
+    if (hoverIntentTimeout) {
+      clearTimeout(hoverIntentTimeout);
+    }
+    
+    // Definir novo timeout para limpar o hover
+    const timeout = setTimeout(() => {
+      setHoveredIndex(null);
+    }, 50);
+    
+    setHoverIntentTimeout(timeout);
+  };
+  
+  // Limpar timeout ao desmontar
+  useEffect(() => {
+    return () => {
+      if (hoverIntentTimeout) {
+        clearTimeout(hoverIntentTimeout);
+      }
+    };
+  }, [hoverIntentTimeout]);
 
   // Render matrix with colored values
   const renderMatrix = () => {
@@ -630,71 +669,95 @@ function InfoPageContent() {
     // Visualização interativa
     if (alignmentViewMode === 'interactive') {
       return (
-        <div className="bg-gray-800 rounded-lg p-5">
-          <div className="flex justify-between items-center mb-4">
-            <div className="text-sm text-gray-400">
+        <div className="bg-gray-800 rounded-lg p-5 relative">
+          <div className="mb-6">
+            <div className="text-sm text-gray-400 mb-2">
               Passe o mouse sobre os caracteres para ver detalhes
             </div>
+            
+            {/* Tooltip fixo que não afeta o layout */}
             {hoveredIndex !== null && (
-              <div className="bg-gray-900 rounded p-2 text-sm">
-                <div>Posição: {hoveredIndex + 1}</div>
-                <div>Seq1: <span className={alignedSeq1[hoveredIndex] === "-" ? "text-red-500" : "text-white"}>{alignedSeq1[hoveredIndex]}</span></div>
-                <div>Seq2: <span className={alignedSeq2[hoveredIndex] === "-" ? "text-red-500" : "text-white"}>{alignedSeq2[hoveredIndex]}</span></div>
-                <div>
-                  {alignedSeq1[hoveredIndex] === alignedSeq2[hoveredIndex] 
-                    ? <span className="text-green-500">Correspondência</span>
-                    : alignedSeq1[hoveredIndex] === "-" || alignedSeq2[hoveredIndex] === "-"
-                      ? <span className="text-red-500">Gap</span>
-                      : <span className="text-yellow-500">Incompatibilidade</span>
-                  }
+              <div className="fixed bg-gray-900 rounded p-3 text-sm shadow-lg z-50" 
+                   style={{
+                     top: '50%', 
+                     right: '5%', 
+                     transform: 'translateY(-50%)',
+                     maxWidth: '250px',
+                     pointerEvents: 'none' // Não interfere com os eventos de mouse
+                   }}>
+                <div className="font-bold border-b border-gray-700 pb-1 mb-2">Posição: {hoveredIndex + 1}</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <div>Seq1:</div> 
+                  <div className={alignedSeq1[hoveredIndex] === "-" ? "text-red-500 font-bold" : "text-white"}>
+                    {alignedSeq1[hoveredIndex]}
+                  </div>
+                  <div>Seq2:</div> 
+                  <div className={alignedSeq2[hoveredIndex] === "-" ? "text-red-500 font-bold" : "text-white"}>
+                    {alignedSeq2[hoveredIndex]}
+                  </div>
+                  <div>Tipo:</div>
+                  <div>
+                    {alignedSeq1[hoveredIndex] === alignedSeq2[hoveredIndex] 
+                      ? <span className="text-green-500">Correspondência</span>
+                      : alignedSeq1[hoveredIndex] === "-" || alignedSeq2[hoveredIndex] === "-"
+                        ? <span className="text-red-500">Gap</span>
+                        : <span className="text-yellow-500">Incompatibilidade</span>
+                    }
+                  </div>
                 </div>
               </div>
             )}
           </div>
           
-          <div className="grid grid-cols-1 gap-2">
-            <div className="flex flex-wrap">
-              {alignedSeq1.map((char, index) => (
-                <div 
-                  key={index} 
-                  className={`
-                    w-8 h-8 m-px flex items-center justify-center font-mono
-                    ${index === hoveredIndex ? 'ring-2 ring-white' : ''}
-                    ${char === "-" 
-                      ? "bg-red-500"
-                      : char === alignedSeq2[index]
-                        ? "bg-green-500"
-                        : "bg-yellow-500"
-                    }
-                  `}
-                  onMouseEnter={() => setHoveredIndex(index)}
-                  onMouseLeave={() => setHoveredIndex(null)}
-                >
-                  {char}
-                </div>
-              ))}
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <div className="text-sm text-gray-400 mb-1">Sequência 1:</div>
+              <div className="flex flex-wrap">
+                {alignedSeq1.map((char, index) => (
+                  <div 
+                    key={index} 
+                    className={`
+                      w-8 h-8 m-px flex items-center justify-center font-mono transition-all duration-150
+                      ${index === hoveredIndex ? 'ring-2 ring-white scale-110 z-10' : ''}
+                      ${char === "-" 
+                        ? "bg-red-500"
+                        : char === alignedSeq2[index]
+                          ? "bg-green-500"
+                          : "bg-yellow-500"
+                      }
+                    `}
+                    onMouseEnter={() => handleHoverEnter(index)}
+                    onMouseLeave={handleHoverLeave}
+                  >
+                    {char}
+                  </div>
+                ))}
+              </div>
             </div>
             
-            <div className="flex flex-wrap">
-              {alignedSeq2.map((char, index) => (
-                <div 
-                  key={index} 
-                  className={`
-                    w-8 h-8 m-px flex items-center justify-center font-mono
-                    ${index === hoveredIndex ? 'ring-2 ring-white' : ''}
-                    ${char === "-" 
-                      ? "bg-red-500"
-                      : char === alignedSeq1[index]
-                        ? "bg-green-500"
-                        : "bg-yellow-500"
-                    }
-                  `}
-                  onMouseEnter={() => setHoveredIndex(index)}
-                  onMouseLeave={() => setHoveredIndex(null)}
-                >
-                  {char}
-                </div>
-              ))}
+            <div>
+              <div className="text-sm text-gray-400 mb-1">Sequência 2:</div>
+              <div className="flex flex-wrap">
+                {alignedSeq2.map((char, index) => (
+                  <div 
+                    key={index} 
+                    className={`
+                      w-8 h-8 m-px flex items-center justify-center font-mono transition-all duration-150
+                      ${index === hoveredIndex ? 'ring-2 ring-white scale-110 z-10' : ''}
+                      ${char === "-" 
+                        ? "bg-red-500"
+                        : char === alignedSeq1[index]
+                          ? "bg-green-500"
+                          : "bg-yellow-500"
+                      }
+                    `}
+                    onMouseEnter={() => handleHoverEnter(index)}
+                    onMouseLeave={handleHoverLeave}
+                  >
+                    {char}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
