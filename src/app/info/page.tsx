@@ -37,6 +37,9 @@ function InfoPageContent() {
   const [highlightAlignmentIndices, setHighlightAlignmentIndices] = useState<number[]>([])
   const [thresholdValue, setThresholdValue] = useState<number>(0)
   const [patternType, setPatternType] = useState<'matches' | 'mismatches' | 'gaps' | 'positive' | 'negative'>('matches')
+  const [isMatrixCollapsed, setIsMatrixCollapsed] = useState(false)
+  const [collapsedRange, setCollapsedRange] = useState<{start: number, end: number, size: number}>({start: 0, end: 0, size: 10})
+  const [showRangeSelector, setShowRangeSelector] = useState(false)
 
   useEffect(() => {
     // Retrieve parameters from URL
@@ -533,15 +536,17 @@ function InfoPageContent() {
           >
             Highlight
           </button>
-          <label className="flex items-center gap-2 ml-auto">
-            <input 
-              type="checkbox" 
-              checked={showDifferenceHighlight} 
-              onChange={() => setShowDifferenceHighlight(!showDifferenceHighlight)}
-              className="rounded text-cyan-600 focus:ring-cyan-500"
-            />
-            <span className="text-sm">Highlight Differences</span>
-          </label>
+          <div className="flex items-center gap-2 ml-auto">
+            <label className="flex items-center gap-2">
+              <input 
+                type="checkbox" 
+                checked={showDifferenceHighlight} 
+                onChange={() => setShowDifferenceHighlight(!showDifferenceHighlight)}
+                className="rounded text-cyan-600 focus:ring-cyan-500"
+              />
+              <span className="text-sm">Highlight Differences</span>
+            </label>
+          </div>
         </div>
         
         {matrixViewMode === 'highlight' && (
@@ -654,130 +659,362 @@ function InfoPageContent() {
           </div>
         )}
         
+        {/* Controles de visualização da tabela */}
+        <div className="flex justify-between items-center mb-2 bg-gray-800 p-2 rounded">
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                if (isMatrixCollapsed) {
+                  setIsMatrixCollapsed(false);
+                  setShowRangeSelector(false);
+                } else {
+                  // Configurar o intervalo padrão quando colapsar pela primeira vez
+                  if (scoreMatrix.length > 10) {
+                    const midPoint = Math.floor(scoreMatrix.length / 2);
+                    const halfSize = Math.min(5, Math.floor(scoreMatrix.length / 4));
+                    setCollapsedRange({
+                      start: Math.max(0, midPoint - halfSize),
+                      end: Math.min(scoreMatrix.length - 1, midPoint + halfSize),
+                      size: halfSize * 2 + 1
+                    });
+                  } else {
+                    setCollapsedRange({
+                      start: 0,
+                      end: scoreMatrix.length - 1,
+                      size: scoreMatrix.length
+                    });
+                  }
+                  setIsMatrixCollapsed(true);
+                }
+              }}
+              className="px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 flex items-center gap-1"
+            >
+              <span>{isMatrixCollapsed ? "Expand Matrix" : "Collapse Matrix"}</span>
+              <span>{isMatrixCollapsed ? "↔" : "↕"}</span>
+            </button>
+            
+            {isMatrixCollapsed && (
+              <button
+                onClick={() => setShowRangeSelector(!showRangeSelector)}
+                className="px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600"
+              >
+                Configure Range
+              </button>
+            )}
+          </div>
+          
+          {isMatrixCollapsed && (
+            <div className="text-xs text-gray-400">
+              Showing {collapsedRange.size} rows/cols of {scoreMatrix.length} total
+            </div>
+          )}
+        </div>
+        
+        {/* Seletor de intervalo */}
+        {showRangeSelector && isMatrixCollapsed && (
+          <div className="mb-4 bg-gray-800 p-3 rounded-lg">
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs">Visible Range:</span>
+                <div className="text-xs text-gray-400">
+                  {collapsedRange.start}-{collapsedRange.end} (size: {collapsedRange.size})
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs">Start:</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={scoreMatrix.length - 1}
+                    value={collapsedRange.start}
+                    onChange={(e) => {
+                      const newStart = Math.max(0, Math.min(Number(e.target.value), collapsedRange.end));
+                      setCollapsedRange({
+                        start: newStart,
+                        end: collapsedRange.end,
+                        size: collapsedRange.end - newStart + 1
+                      });
+                    }}
+                    className="w-16 bg-gray-700 border border-gray-600 rounded p-1 text-xs"
+                  />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <span className="text-xs">End:</span>
+                  <input
+                    type="number"
+                    min={collapsedRange.start}
+                    max={scoreMatrix.length - 1}
+                    value={collapsedRange.end}
+                    onChange={(e) => {
+                      const newEnd = Math.min(Number(e.target.value), scoreMatrix.length - 1);
+                      setCollapsedRange({
+                        start: collapsedRange.start,
+                        end: newEnd,
+                        size: newEnd - collapsedRange.start + 1
+                      });
+                    }}
+                    className="w-16 bg-gray-700 border border-gray-600 rounded p-1 text-xs"
+                  />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <span className="text-xs">Size:</span>
+                  <select
+                    value={collapsedRange.size}
+                    onChange={(e) => {
+                      const newSize = Number(e.target.value);
+                      const currentCenter = Math.floor((collapsedRange.start + collapsedRange.end) / 2);
+                      const halfSize = Math.floor(newSize / 2);
+                      
+                      let newStart = Math.max(0, currentCenter - halfSize);
+                      let newEnd = Math.min(scoreMatrix.length - 1, currentCenter + halfSize);
+                      
+                      // Ajustar para manter o tamanho solicitado, se possível
+                      if (newEnd - newStart + 1 < newSize && newEnd < scoreMatrix.length - 1) {
+                        newEnd = Math.min(scoreMatrix.length - 1, newStart + newSize - 1);
+                      }
+                      if (newEnd - newStart + 1 < newSize && newStart > 0) {
+                        newStart = Math.max(0, newEnd - newSize + 1);
+                      }
+                      
+                      setCollapsedRange({
+                        start: newStart,
+                        end: newEnd,
+                        size: newEnd - newStart + 1
+                      });
+                    }}
+                    className="w-20 bg-gray-700 border border-gray-600 rounded p-1 text-xs"
+                  >
+                    {[5, 10, 15, 20, 25, 30].map(size => (
+                      <option key={size} value={size}>{size}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      // Mostrar início da matriz
+                      const size = collapsedRange.size;
+                      setCollapsedRange({
+                        start: 0,
+                        end: Math.min(size - 1, scoreMatrix.length - 1),
+                        size
+                      });
+                    }}
+                    className="px-2 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600"
+                  >
+                    Start
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      // Mostrar meio da matriz
+                      const size = collapsedRange.size;
+                      const midPoint = Math.floor(scoreMatrix.length / 2);
+                      const halfSize = Math.floor(size / 2);
+                      setCollapsedRange({
+                        start: Math.max(0, midPoint - halfSize),
+                        end: Math.min(scoreMatrix.length - 1, midPoint + halfSize),
+                        size
+                      });
+                    }}
+                    className="px-2 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600"
+                  >
+                    Middle
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      // Mostrar fim da matriz
+                      const size = collapsedRange.size;
+                      setCollapsedRange({
+                        start: Math.max(0, scoreMatrix.length - size),
+                        end: scoreMatrix.length - 1,
+                        size
+                      });
+                    }}
+                    className="px-2 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600"
+                  >
+                    End
+                  </button>
+                  
+                  {selectedCell && (
+                    <button
+                      onClick={() => {
+                        // Centralizar na célula selecionada
+                        const size = collapsedRange.size;
+                        const halfSize = Math.floor(size / 2);
+                        const newStart = Math.max(0, selectedCell.i - halfSize);
+                        const newEnd = Math.min(scoreMatrix.length - 1, newStart + size - 1);
+                        setCollapsedRange({
+                          start: newStart,
+                          end: newEnd,
+                          size
+                        });
+                      }}
+                      className="px-2 py-1 text-xs rounded bg-cyan-600 hover:bg-cyan-700"
+                    >
+                      Show Selected
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <table className="border-collapse text-center min-w-fit">
           <thead>
             <tr>
               <th className="border border-gray-600 p-2 bg-gray-800"></th>
               <th className="border border-gray-600 p-2 bg-gray-800"></th>
-              {seq2.split('').map((char, idx) => (
-                <th key={idx} className="border border-gray-600 p-2 bg-gray-800 w-10 h-10">{char}</th>
-              ))}
+              {seq2.split('').map((char, idx) => {
+                // No modo colapsado, só mostrar as colunas no intervalo definido
+                if (isMatrixCollapsed && (idx < collapsedRange.start || idx > collapsedRange.end)) {
+                  return null;
+                }
+                return (
+                  <th key={idx} className="border border-gray-600 p-2 bg-gray-800 w-10 h-10">{char}</th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
-            {scoreMatrix.map((row, i) => (
-              <tr key={i}>
-                <th className="border border-gray-600 p-2 bg-gray-800">
-                  {i === 0 ? '' : seq1[i-1]}
-                </th>
-                {row.map((score, j) => {
-                  // Determinar a direção do traceback
-                  const direction = tracebackMatrix[i][j];
-                  
-                  // Determinar a cor de fundo com base no modo de visualização
-                  let bgColor = 'bg-gray-700';
-                  let arrowSymbol = '';
-                  let diffStyle: React.CSSProperties = {};
-                  
-                  if (matrixViewMode === 'standard') {
-                    if (i > 0 && j > 0) {
+            {scoreMatrix.map((row, i) => {
+              // No modo colapsado, só mostrar as linhas no intervalo definido
+              if (isMatrixCollapsed && (i < collapsedRange.start || i > collapsedRange.end)) {
+                return null;
+              }
+              
+              return (
+                <tr key={i}>
+                  <th className="border border-gray-600 p-2 bg-gray-800">
+                    {i === 0 ? '' : seq1[i-1]}
+                  </th>
+                  {row.map((score, j) => {
+                    // No modo colapsado, só mostrar as colunas no intervalo definido
+                    if (isMatrixCollapsed && (j < collapsedRange.start || j > collapsedRange.end)) {
+                      return null;
+                    }
+                    
+                    // Determinar a direção do traceback
+                    const direction = tracebackMatrix[i][j];
+                    
+                    // Determinar a cor de fundo com base no modo de visualização
+                    let bgColor = 'bg-gray-700';
+                    let arrowSymbol = '';
+                    let diffStyle: React.CSSProperties = {};
+                    
+                    if (matrixViewMode === 'standard') {
+                      if (i > 0 && j > 0) {
+                        if (direction === 'D') {
+                          bgColor = seq1[i-1] === seq2[j-1] ? 'bg-green-700' : 'bg-yellow-700';
+                        } else if (direction === 'U' || direction === 'L') {
+                          bgColor = 'bg-red-700';
+                        }
+                      }
+                    } else if (matrixViewMode === 'heatmap') {
+                      // Usar o estilo inline para o heatmap
+                      bgColor = '';
+                      diffStyle = { backgroundColor: getHeatMapColor(score) };
+                    } else if (matrixViewMode === 'colorful') {
+                      // Usar o estilo inline para cores vibrantes
+                      bgColor = '';
+                      diffStyle = { backgroundColor: getColorfulColor(score) };
+                    } else if (matrixViewMode === 'gradient') {
+                      // Usar o estilo inline para o gradiente
+                      bgColor = '';
+                      diffStyle = { backgroundColor: getGradientColor(score) };
+                    } else if (matrixViewMode === 'arrows') {
+                      // Visualização com setas
                       if (direction === 'D') {
-                        bgColor = seq1[i-1] === seq2[j-1] ? 'bg-green-700' : 'bg-yellow-700';
-                      } else if (direction === 'U' || direction === 'L') {
-                        bgColor = 'bg-red-700';
+                        arrowSymbol = '↖';
+                      } else if (direction === 'U') {
+                        arrowSymbol = '↑';
+                      } else if (direction === 'L') {
+                        arrowSymbol = '←';
+                      }
+                    } else if (matrixViewMode === 'highlight') {
+                      // Modo de destaque
+                      if (shouldHighlightCell(i, j)) {
+                        diffStyle = { 
+                          backgroundColor: 'rgba(14, 165, 233, 0.6)',
+                          boxShadow: '0 0 5px rgba(14, 165, 233, 0.8) inset'
+                        };
                       }
                     }
-                  } else if (matrixViewMode === 'heatmap') {
-                    // Usar o estilo inline para o heatmap
-                    bgColor = '';
-                    diffStyle = { backgroundColor: getHeatMapColor(score) };
-                  } else if (matrixViewMode === 'colorful') {
-                    // Usar o estilo inline para cores vibrantes
-                    bgColor = '';
-                    diffStyle = { backgroundColor: getColorfulColor(score) };
-                  } else if (matrixViewMode === 'gradient') {
-                    // Usar o estilo inline para o gradiente
-                    bgColor = '';
-                    diffStyle = { backgroundColor: getGradientColor(score) };
-                  } else if (matrixViewMode === 'arrows') {
-                    // Visualização com setas
-                    if (direction === 'D') {
-                      arrowSymbol = '↖';
-                    } else if (direction === 'U') {
-                      arrowSymbol = '↑';
-                    } else if (direction === 'L') {
-                      arrowSymbol = '←';
-                    }
-                  } else if (matrixViewMode === 'highlight') {
-                    // Modo de destaque
-                    if (shouldHighlightCell(i, j)) {
-                      diffStyle = { 
-                        backgroundColor: 'rgba(14, 165, 233, 0.6)',
-                        boxShadow: '0 0 5px rgba(14, 165, 233, 0.8) inset'
+
+                    // Adicionar destaque para célula selecionada em qualquer modo
+                    if (selectedCell && selectedCell.i === i && selectedCell.j === j && matrixViewMode !== 'highlight') {
+                      diffStyle = {
+                        ...diffStyle,
+                        boxShadow: '0 0 0 2px white inset'
                       };
                     }
-                  }
-
-                  // Adicionar destaque para célula selecionada em qualquer modo
-                  if (selectedCell && selectedCell.i === i && selectedCell.j === j && matrixViewMode !== 'highlight') {
-                    diffStyle = {
-                      ...diffStyle,
-                      boxShadow: '0 0 0 2px white inset'
-                    };
-                  }
-                  
-                  // Destacar diferenças entre células adjacentes
-                  let diffHighlight = null;
-                  if (showDifferenceHighlight && i > 0 && j > 0) {
-                    const diagonal = scoreMatrix[i-1][j-1];
-                    const up = scoreMatrix[i-1][j];
-                    const left = scoreMatrix[i][j-1];
                     
-                    const diagonalDiff = score - diagonal;
-                    const upDiff = score - up;
-                    const leftDiff = score - left;
+                    // Destacar diferenças entre células adjacentes
+                    let diffHighlight = null;
+                    if (showDifferenceHighlight && i > 0 && j > 0) {
+                      const diagonal = scoreMatrix[i-1][j-1];
+                      const up = scoreMatrix[i-1][j];
+                      const left = scoreMatrix[i][j-1];
+                      
+                      const diagonalDiff = score - diagonal;
+                      const upDiff = score - up;
+                      const leftDiff = score - left;
+                      
+                      diffHighlight = (
+                        <div className="absolute text-[9px] flex flex-col opacity-70">
+                          <span className={`${diagonalDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '-12px', left: '-12px'}}>
+                            {diagonalDiff > 0 ? '+' : ''}{diagonalDiff}
+                          </span>
+                          <span className={`${upDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '-12px', left: '5px'}}>
+                            {upDiff > 0 ? '+' : ''}{upDiff}
+                          </span>
+                          <span className={`${leftDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '5px', left: '-12px'}}>
+                            {leftDiff > 0 ? '+' : ''}{leftDiff}
+                          </span>
+                        </div>
+                      );
+                    }
                     
-                    diffHighlight = (
-                      <div className="absolute text-[9px] flex flex-col opacity-70">
-                        <span className={`${diagonalDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '-12px', left: '-12px'}}>
-                          {diagonalDiff > 0 ? '+' : ''}{diagonalDiff}
-                        </span>
-                        <span className={`${upDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '-12px', left: '5px'}}>
-                          {upDiff > 0 ? '+' : ''}{upDiff}
-                        </span>
-                        <span className={`${leftDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '5px', left: '-12px'}}>
-                          {leftDiff > 0 ? '+' : ''}{leftDiff}
-                        </span>
-                      </div>
+                    return (
+                      <td 
+                        key={j} 
+                        className={`border border-gray-600 p-2 ${bgColor} w-10 h-10 relative cursor-pointer hover:opacity-80 transition-opacity`}
+                        style={diffStyle}
+                        onClick={() => handleCellClick(i, j)}
+                      >
+                        <div>{score}</div>
+                        {matrixViewMode === 'arrows' && (
+                          <div className="text-xl absolute inset-0 flex items-center justify-center text-cyan-300">
+                            {arrowSymbol}
+                          </div>
+                        )}
+                        {matrixViewMode !== 'arrows' && (
+                          <div className="absolute bottom-0 right-0 text-xs opacity-70">
+                            {direction}
+                          </div>
+                        )}
+                        {showDifferenceHighlight && diffHighlight}
+                      </td>
                     );
-                  }
-                  
-                  return (
-                    <td 
-                      key={j} 
-                      className={`border border-gray-600 p-2 ${bgColor} w-10 h-10 relative cursor-pointer hover:opacity-80 transition-opacity`}
-                      style={diffStyle}
-                      onClick={() => handleCellClick(i, j)}
-                    >
-                      <div>{score}</div>
-                      {matrixViewMode === 'arrows' && (
-                        <div className="text-xl absolute inset-0 flex items-center justify-center text-cyan-300">
-                          {arrowSymbol}
-                        </div>
-                      )}
-                      {matrixViewMode !== 'arrows' && (
-                        <div className="absolute bottom-0 right-0 text-xs opacity-70">
-                          {direction}
-                        </div>
-                      )}
-                      {showDifferenceHighlight && diffHighlight}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+        
+        {isMatrixCollapsed && (
+          <div className="mt-2 text-center text-sm text-gray-400">
+            <p>Matrix is collapsed. Showing rows/columns {collapsedRange.start}-{collapsedRange.end} of {scoreMatrix.length}.</p>
+          </div>
+        )}
         
         {selectedCell && (
           <div className="mt-4 bg-gray-800 p-3 rounded-lg text-sm">
@@ -785,7 +1022,7 @@ function InfoPageContent() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <div>
                 <span className="text-gray-400">Posição:</span> {selectedCell.i}×{selectedCell.j}
-              </div>
+      </div>
               <div>
                 <span className="text-gray-400">Valor:</span> {scoreMatrix[selectedCell.i][selectedCell.j]}
               </div>
@@ -819,46 +1056,46 @@ function InfoPageContent() {
     
     // Visualização em blocos (estilo original)
     if (alignmentViewMode === 'blocks') {
-      return (
-        <div className="bg-gray-800 rounded-lg p-5 overflow-x-auto">
-          <div className="flex flex-row flex-nowrap min-w-fit">
-            {alignedSeq1.map((char, index) => (
-              <div
-                key={index}
-                className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${
+    return (
+      <div className="bg-gray-800 rounded-lg p-5 overflow-x-auto">
+        <div className="flex flex-row flex-nowrap min-w-fit">
+          {alignedSeq1.map((char, index) => (
+            <div
+              key={index}
+              className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${
                   highlightAlignmentIndices.includes(index) ? 'ring-2 ring-white scale-110 z-10' : ''
                 } ${
-                  char === "-" ? "bg-red-500" : char === alignedSeq2[index] ? "bg-green-500" : "bg-yellow-500"
-                }`}
-              >
-                {char}
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-row flex-nowrap min-w-fit mt-1">
-            {alignedSeq1.map((char, index) => (
+                char === "-" ? "bg-red-500" : char === alignedSeq2[index] ? "bg-green-500" : "bg-yellow-500"
+              }`}
+            >
+              {char}
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-row flex-nowrap min-w-fit mt-1">
+          {alignedSeq1.map((char, index) => (
               <div key={index} className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${
                 highlightAlignmentIndices.includes(index) ? 'text-white font-bold' : ''
               }`}>
-                {char === alignedSeq2[index] ? "|" : char === "-" || alignedSeq2[index] === "-" ? " " : "."}
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-row flex-nowrap min-w-fit">
-            {alignedSeq2.map((char, index) => (
-              <div
-                key={index}
-                className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${
+              {char === alignedSeq2[index] ? "|" : char === "-" || alignedSeq2[index] === "-" ? " " : "."}
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-row flex-nowrap min-w-fit">
+          {alignedSeq2.map((char, index) => (
+            <div
+              key={index}
+              className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${
                   highlightAlignmentIndices.includes(index) ? 'ring-2 ring-white scale-110 z-10' : ''
                 } ${
-                  char === "-" ? "bg-red-500" : char === alignedSeq1[index] ? "bg-green-500" : "bg-yellow-500"
-                }`}
-              >
-                {char}
-              </div>
-            ))}
-          </div>
+                char === "-" ? "bg-red-500" : char === alignedSeq1[index] ? "bg-green-500" : "bg-yellow-500"
+              }`}
+            >
+              {char}
+            </div>
+          ))}
         </div>
+      </div>
       );
     }
     
@@ -1615,7 +1852,7 @@ function InfoPageContent() {
                         represents the maximum score for the alignment of subsequences 
                         up to that point. Try different visualization modes to better understand 
                         how the algorithm works.
-                      </div>
+              </div>
                     </div>
                   </div>
                 </div>
@@ -1625,9 +1862,9 @@ function InfoPageContent() {
                     {matrixViewMode === 'standard' && (
                       <>
                         The colors indicate the type of operation: <span className="text-green-400">match</span>, 
-                        <span className="text-yellow-400"> mismatch</span>, or <span className="text-red-400">gap</span>.
+                    <span className="text-yellow-400"> mismatch</span>, or <span className="text-red-400">gap</span>.
                         The letters in the bottom right corner of each cell indicate the traceback direction:
-                        D (diagonal), U (up), L (left).
+                    D (diagonal), U (up), L (left).
                       </>
                     )}
                     {matrixViewMode === 'heatmap' && (
