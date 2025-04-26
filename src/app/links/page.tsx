@@ -13,7 +13,7 @@ export default function LinksPage() {
       <div className="w-full max-w-7xl mx-auto">
         <div className="pt-10 px-5">
           <Link href="/" className="font-bold text-gray-100 transition-all">
-            ← Go back
+            ← Back
           </Link>
           <div className="flex items-center justify-center gap-2">
             <h1 className="text-center text-3xl font-bold my-8 text-white">Links of Interest</h1>

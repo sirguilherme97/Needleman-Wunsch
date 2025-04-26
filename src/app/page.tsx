@@ -1,51 +1,94 @@
 'use client'
 /* eslint-disable react/no-unescaped-entities */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import NeedlemanWunschAlignment from "../components/Script"; // Make sure to correctly import the NeedlemanWunschAlignment component
 
 export default function AlignmentContainer() {
     const [seq1, setSeq1] = useState("");
     const [seq2, setSeq2] = useState("");
-    const [matchScore, setMatchScore] = useState(1); // Novo: score para match
+    const [matchScore, setMatchScore] = useState(1); // New: score for match
     const [gapPenalty, setGapPenalty] = useState(-1);
     const [mismatchPenalty, setMismatchPenalty] = useState(-1);
 
-    const handleSeq1Change = (event: any) => setSeq1(event.target.value.toUpperCase());
-    const handleSeq2Change = (event: any) => setSeq2(event.target.value.toUpperCase());
-    const handleMatchScoreChange = (event: any) => setMatchScore(Number(event.target.value));
-    const handleGapPenaltyChange = (event: any) => setGapPenalty(Number(event.target.value));
-    const handleMismatchPenaltyChange = (event: any) => setMismatchPenalty(Number(event.target.value));
+    // Load data from localStorage when the component is mounted
+    useEffect(() => {
+        // Check if we're on the client (browser) before accessing localStorage
+        if (typeof window !== 'undefined') {
+            const savedSeq1 = localStorage.getItem('nw_seq1');
+            const savedSeq2 = localStorage.getItem('nw_seq2');
+            const savedMatchScore = localStorage.getItem('nw_matchScore');
+            const savedGapPenalty = localStorage.getItem('nw_gapPenalty');
+            const savedMismatchPenalty = localStorage.getItem('nw_mismatchPenalty');
+
+            if (savedSeq1) setSeq1(savedSeq1);
+            if (savedSeq2) setSeq2(savedSeq2);
+            if (savedMatchScore) setMatchScore(Number(savedMatchScore));
+            if (savedGapPenalty) setGapPenalty(Number(savedGapPenalty));
+            if (savedMismatchPenalty) setMismatchPenalty(Number(savedMismatchPenalty));
+        }
+    }, []);
+
+    // Functions to update states and save to localStorage
+    const handleSeq1Change = (event: any) => {
+        const value = event.target.value.toUpperCase();
+        setSeq1(value);
+        localStorage.setItem('nw_seq1', value);
+    };
+
+    const handleSeq2Change = (event: any) => {
+        const value = event.target.value.toUpperCase();
+        setSeq2(value);
+        localStorage.setItem('nw_seq2', value);
+    };
+
+    const handleMatchScoreChange = (event: any) => {
+        const value = Number(event.target.value);
+        setMatchScore(value);
+        localStorage.setItem('nw_matchScore', value.toString());
+    };
+
+    const handleGapPenaltyChange = (event: any) => {
+        const value = Number(event.target.value);
+        setGapPenalty(value);
+        localStorage.setItem('nw_gapPenalty', value.toString());
+    };
+
+    const handleMismatchPenaltyChange = (event: any) => {
+        const value = Number(event.target.value);
+        setMismatchPenalty(value);
+        localStorage.setItem('nw_mismatchPenalty', value.toString());
+    };
 
     return (
         <>
-            <div className="w-screen bg-gradient-to-l from-cyan-950 to-black h-auto pt-5 flex flex-col items-center justify-start   text-white">
-                <h1 className="text-white font-bold text-lg">Needleman-Wunsch Algorithm</h1>
-                <h2 className="text-white font-medium text-lg">Sequence Alignment</h2>
-                <div className="w-full max-w-2xl p-6 rounded-lg shadow-lg">
+            <div className="w-screen bg-gradient-to-l from-cyan-950 to-black h-auto pt-5 flex flex-col items-center justify-start text-white">
+                <h1 className="text-white font-bold text-lg md:text-xl lg:text-2xl">Needleman-Wunsch Algorithm</h1>
+                <h2 className="text-white font-medium text-md md:text-lg">Sequence Alignment</h2>
+                <div className="w-full max-w-2xl p-4 sm:p-6 rounded-lg shadow-lg">
                     <div className="grid grid-cols-1 gap-4">
                         <div className="grid grid-cols-1 gap-4">
                             <div>
                                 <label className="block text-sm font-semibold mb-1">Sequence 1</label>
-                                <input
-                                    type="text"
-                                    className="w-full h-10 p-2 rounded-md text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                <textarea
+                                    className="w-full p-2 h-24 rounded-md text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 break-all"
                                     placeholder="e.g., ATCG"
                                     value={seq1}
                                     onChange={handleSeq1Change}
+                                    style={{ resize: 'vertical', minHeight: '60px' }}
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold mb-1">Sequence 2</label>
-                                <input
-                                    type="text"
-                                    className="w-full h-10 p-2 rounded-md text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                <textarea
+                                    className="w-full p-2 h-24 rounded-md text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 break-all"
                                     placeholder="e.g., AGCG"
                                     value={seq2}
                                     onChange={handleSeq2Change}
+                                    style={{ resize: 'vertical', minHeight: '60px' }}
                                 />
                             </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-sm font-semibold mb-1">Match Score</label>
                                 <input
@@ -82,7 +125,7 @@ export default function AlignmentContainer() {
                         </div>
                     </div>
                 </div>
-                <div className="my-10 mg:my-20 w-full">
+                <div className="my-10 w-full ">
                     <NeedlemanWunschAlignment
                         seq1={seq1}
                         seq2={seq2}

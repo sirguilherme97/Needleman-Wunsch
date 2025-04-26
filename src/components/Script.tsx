@@ -1,10 +1,12 @@
 'use client'
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function NeedlemanWunschComponent({ seq1, seq2, matchScore, gapPenalty, mismatchPenalty }: any) {
     const [alignedSeq1, setAlignedSeq1] = useState<string[]>([]);
     const [alignedSeq2, setAlignedSeq2] = useState<string[]>([]);
     const [alignmentScore, setAlignmentScore] = useState<number>(0);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         function needlemanWunsch(seq1: string, seq2: string, matchScore: number, gapPenalty: number, mismatchPenalty: number) {
@@ -66,46 +68,91 @@ export default function NeedlemanWunschComponent({ seq1, seq2, matchScore, gapPe
         }
 
         if (seq1 && seq2) {
-            const { alignedSeq1, alignedSeq2, finalScore } = needlemanWunsch(seq1, seq2, matchScore, gapPenalty, mismatchPenalty);
-            setAlignedSeq1(alignedSeq1);
-            setAlignedSeq2(alignedSeq2);
-            setAlignmentScore(finalScore);
+            setIsLoading(true);
+            
+            // Use setTimeout to avoid blocking the interface
+            setTimeout(() => {
+                try {
+                    const { alignedSeq1, alignedSeq2, finalScore } = needlemanWunsch(seq1, seq2, matchScore, gapPenalty, mismatchPenalty);
+                    setAlignedSeq1(alignedSeq1);
+                    setAlignedSeq2(alignedSeq2);
+                    setAlignmentScore(finalScore);
+                    setIsLoading(false);
+                } catch (error) {
+                    console.error("Error processing alignment:", error);
+                    setAlignedSeq1([]);
+                    setAlignedSeq2([]);
+                    setAlignmentScore(0);
+                    setIsLoading(false);
+                }
+            }, 100);
         } else {
             setAlignedSeq1([]);
             setAlignedSeq2([]);
             setAlignmentScore(0);
+            setIsLoading(false);
         }
     }, [seq1, seq2, matchScore, gapPenalty, mismatchPenalty]);
 
-    return (
-        <div className="w-screen px-10 h-auto flex flex-col gap-5">
-            {seq1 != "" && seq2 != "" && matchScore != 0 && (
-                <div className="text-white font-bold text-center pb-5">
-                    Alignment Score: <span className="text-green-400">{matchScore == 0 ? alignmentScore : alignmentScore}</span>
+    // Generate URL with parameters for the details page
+    const detailsUrl = `/info?seq1=${encodeURIComponent(seq1)}&seq2=${encodeURIComponent(seq2)}&match=${matchScore}&gap=${gapPenalty}&mismatch=${mismatchPenalty}`;
+
+    // Render the alignment visualization responsively
+    const renderAlignment = () => {
+        if (alignedSeq1.length === 0 || alignedSeq2.length === 0) return null;
+
+        return (
+            <div className="overflow-x-hidden w-full max-w-full">
+                <div className="flex flex-row flex-wrap min-w-fit">
+                    {alignedSeq1.map((char, index) => (
+                        <div
+                            key={index}
+                            className={`p-2 font-mono w-8 text-center ${char === "-" ? "bg-red-500" : char === alignedSeq2[index] ? "bg-green-500" : "bg-yellow-500"}`}
+                        >
+                            {char}
+                        </div>
+                    ))}
                 </div>
+                <div className="flex flex-row flex-wrap min-w-fit">
+                    {alignedSeq2.map((char, index) => (
+                        <div
+                            key={index}
+                            className={`p-2 font-mono w-8 text-center ${char === "-" ? "bg-red-500" : char === alignedSeq1[index] ? "bg-green-500" : "bg-yellow-500"}`}
+                        >
+                            {char}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    // Loading spinner component
+    const LoadingSpinner = () => (
+        <div className="flex flex-col items-center justify-center py-10">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500 mb-3"></div>
+            <p className="text-cyan-400 text-base">Calculating alignment...</p>
+            <p className="text-gray-400 text-xs mt-1">This may take a moment for long sequences</p>
+        </div>
+    );
+
+    return (
+        <div className="w-full px-4 sm:px-10 h-auto flex flex-col gap-5">
+            {seq1 != "" && seq2 != "" && matchScore != 0 && (
+                <>
+                    <div className="text-white font-bold text-center pb-5">
+                        <p className="text-lg sm:text-xl">Alignment Score: <span className="text-green-400">{alignmentScore}</span></p>
+                    </div>
+                    <div className="flex justify-center mb-5">
+                        <Link href={detailsUrl} className="bg-cyan-700 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded transition-all">
+                            View Detailed Analysis
+                        </Link>
+                    </div>
+                    <div className="w-full overflow-x-auto">
+                        {isLoading ? <LoadingSpinner /> : renderAlignment()}
+                    </div>
+                </>
             )}
-            <div className="flex flex-row flex-wrap max-w-full">
-
-                {alignedSeq1.map((char, index) => (
-                    <div
-                        key={index}
-                        className={`p-2 font-mono w-8 text-center ${char === "-" ? "bg-red-500" : char === alignedSeq2[index] ? "bg-green-500" : "bg-yellow-500"}`}
-                    >
-                        {char}
-                    </div>
-                ))}
-            </div>
-            <div className="flex flex-row flex-wrap max-w-full">
-                {alignedSeq2.map((char, index) => (
-                    <div
-                        key={index}
-                        className={`p-2 font-mono w-8 text-center ${char === "-" ? "bg-red-500" : char === alignedSeq1[index] ? "bg-green-500" : "bg-yellow-500"}`}
-                    >
-                        {char}
-                    </div>
-                ))}
-            </div>
-
         </div>
     );
 }
