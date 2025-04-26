@@ -29,7 +29,7 @@ function InfoPageContent() {
   const [progressStatus, setProgressStatus] = useState("Initializing...")
   const [matrixViewMode, setMatrixViewMode] = useState<'standard' | 'heatmap' | 'arrows' | 'colorful' | 'gradient'>('standard')
   const [showDifferenceHighlight, setShowDifferenceHighlight] = useState(false)
-  const [alignmentViewMode, setAlignmentViewMode] = useState<'blocks' | 'linear' | 'detailed' | 'compact' | 'interactive'>('blocks')
+  const [alignmentViewMode, setAlignmentViewMode] = useState<'blocks' | 'linear' | 'detailed' | 'compact' | 'interactive' | 'comparative'>('blocks')
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [hoverIntentTimeout, setHoverIntentTimeout] = useState<NodeJS.Timeout | null>(null)
 
@@ -836,6 +836,298 @@ function InfoPageContent() {
       );
     }
     
+    // Novo modo de visualização comparativa
+    if (alignmentViewMode === 'comparative') {
+      // Calculate alignment metrics
+      const totalPositions = alignedSeq1.length;
+      const matches = statistics.matches;
+      const mismatches = statistics.mismatches;
+      const gaps = statistics.gaps;
+      
+      // Calculate position-by-position similarity
+      const similarityData = [];
+      let rollingAverage = [];
+      const windowSize = 5; // Size of the rolling window
+      
+      for (let i = 0; i < alignedSeq1.length; i++) {
+        // Calculate similarity at this position (1 for match, 0 for mismatch, -1 for gaps)
+        let similarity = 0;
+        
+        if (alignedSeq1[i] === alignedSeq2[i]) {
+          similarity = 1; // Match
+        } else if (alignedSeq1[i] === '-' || alignedSeq2[i] === '-') {
+          similarity = -1; // Gap
+        } else {
+          similarity = 0; // Mismatch
+        }
+        
+        // Update rolling window
+        rollingAverage.push(similarity);
+        if (rollingAverage.length > windowSize) {
+          rollingAverage.shift();
+        }
+        
+        // Calculate average similarity in the current window
+        const avgSimilarity = rollingAverage.reduce((sum, val) => sum + val, 0) / rollingAverage.length;
+        
+        similarityData.push({
+          position: i + 1,
+          similarity: similarity,
+          rollingAverage: avgSimilarity
+        });
+      }
+      
+      // Count nucleotide/amino acid frequencies
+      const seq1Counts: {[key: string]: number} = {};
+      const seq2Counts: {[key: string]: number} = {};
+      
+      // Count without gaps
+      alignedSeq1.forEach(char => {
+        if (char !== '-') {
+          seq1Counts[char] = (seq1Counts[char] || 0) + 1;
+        }
+      });
+      
+      alignedSeq2.forEach(char => {
+        if (char !== '-') {
+          seq2Counts[char] = (seq2Counts[char] || 0) + 1;
+        }
+      });
+      
+      // Get all unique characters
+      const allChars = Array.from(new Set([...alignedSeq1, ...alignedSeq2])).filter(char => char !== '-');
+      
+      return (
+        <div className="bg-gray-800 rounded-lg p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Comparative Overview Chart */}
+            <div className="bg-gray-900 rounded-lg p-4">
+              <h3 className="text-md font-semibold mb-3">Alignment Composition</h3>
+              <div className="relative h-32 w-full">
+                <div className="absolute inset-0 flex">
+                  {/* Match section */}
+                  <div 
+                    className="h-full bg-green-500 flex items-center justify-center text-xs md:text-sm font-medium"
+                    style={{ width: `${(matches / totalPositions) * 100}%` }}
+                  >
+                    <span className="p-1 bg-black/40 rounded">
+                      {matches} <span className="hidden sm:inline">Matches</span>
+                      <br />
+                      {Math.round((matches / totalPositions) * 100)}%
+                    </span>
+                  </div>
+                  
+                  {/* Mismatch section */}
+                  <div 
+                    className="h-full bg-yellow-500 flex items-center justify-center text-xs md:text-sm font-medium"
+                    style={{ width: `${(mismatches / totalPositions) * 100}%` }}
+                  >
+                    <span className="p-1 bg-black/40 rounded">
+                      {mismatches} <span className="hidden sm:inline">Mismatches</span>
+                      <br />
+                      {Math.round((mismatches / totalPositions) * 100)}%
+                    </span>
+                  </div>
+                  
+                  {/* Gap section */}
+                  <div 
+                    className="h-full bg-red-500 flex items-center justify-center text-xs md:text-sm font-medium"
+                    style={{ width: `${(gaps / totalPositions) * 100}%` }}
+                  >
+                    <span className="p-1 bg-black/40 rounded">
+                      {gaps} <span className="hidden sm:inline">Gaps</span>
+                      <br />
+                      {Math.round((gaps / totalPositions) * 100)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-between mt-2 text-xs text-gray-400">
+                <div>0</div>
+                <div>{Math.round(totalPositions / 4)}</div>
+                <div>{Math.round(totalPositions / 2)}</div>
+                <div>{Math.round(3 * totalPositions / 4)}</div>
+                <div>{totalPositions}</div>
+              </div>
+            </div>
+            
+            {/* Sequence Composition Comparison */}
+            <div className="bg-gray-900 rounded-lg p-4">
+              <h3 className="text-md font-semibold mb-3">Sequence Composition</h3>
+              <div className="grid grid-cols-1 gap-1">
+                {allChars.map(char => {
+                  const seq1Count = seq1Counts[char] || 0;
+                  const seq2Count = seq2Counts[char] || 0;
+                  const maxCount = Math.max(seq1Count, seq2Count);
+                  const barWidth1 = maxCount > 0 ? (seq1Count / maxCount) * 100 : 0;
+                  const barWidth2 = maxCount > 0 ? (seq2Count / maxCount) * 100 : 0;
+                  
+                  return (
+                    <div key={char} className="flex items-center mb-1">
+                      <div className="w-6 font-mono text-center">{char}</div>
+                      <div className="w-full flex items-center">
+                        <div className="w-1/2 flex justify-end pr-1">
+                          <div 
+                            className="h-4 bg-cyan-500 rounded-l" 
+                            style={{ width: `${barWidth1}%` }}
+                          ></div>
+                        </div>
+                        <div className="text-xs px-2">{seq1Count}/{seq2Count}</div>
+                        <div className="w-1/2 pl-1">
+                          <div 
+                            className="h-4 bg-purple-500 rounded-r" 
+                            style={{ width: `${barWidth2}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-center text-xs text-gray-400 mt-2">
+                <div className="flex items-center mr-4">
+                  <div className="w-3 h-3 bg-cyan-500 mr-1 rounded"></div>
+                  <span>Seq1</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-purple-500 mr-1 rounded"></div>
+                  <span>Seq2</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Similarity Profile */}
+            <div className="bg-gray-900 rounded-lg p-4 md:col-span-2">
+              <h3 className="text-md font-semibold mb-3">Similarity Profile</h3>
+              <div className="relative h-40">
+                {/* Baseline (zero line) */}
+                <div className="absolute w-full h-px bg-gray-500 top-1/2 left-0"></div>
+                
+                {/* Position markers */}
+                <div className="absolute w-full bottom-0 left-0 flex justify-between text-xs text-gray-400">
+                  {[0, 0.25, 0.5, 0.75, 1].map(fraction => (
+                    <div key={fraction} className="flex flex-col items-center">
+                      <div className="h-1 w-px bg-gray-500 mb-1"></div>
+                      {Math.round(fraction * alignedSeq1.length)}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Plot similarity points and rolling average */}
+                <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${alignedSeq1.length} 2`} preserveAspectRatio="none">
+                  {/* Rolling average line */}
+                  <polyline 
+                    points={similarityData.map(d => `${d.position - 1},${1 - (d.rollingAverage + 1) / 2}`).join(' ')}
+                    fill="none"
+                    stroke="rgba(14, 165, 233, 0.7)"
+                    strokeWidth="0.02"
+                  />
+                  
+                  {/* Individual points */}
+                  {similarityData.map((d, i) => (
+                    <circle 
+                      key={i}
+                      cx={d.position - 1}
+                      cy={1 - (d.similarity + 1) / 2}
+                      r="0.02"
+                      fill={
+                        d.similarity === 1 ? 'rgb(34, 197, 94)' : 
+                        d.similarity === 0 ? 'rgb(234, 179, 8)' : 
+                        'rgb(239, 68, 68)'
+                      }
+                    />
+                  ))}
+                </svg>
+              </div>
+              
+              <div className="flex justify-between text-xs text-gray-400 mt-2">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-500 mr-1 rounded"></div>
+                  <span>Match</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-yellow-500 mr-1 rounded"></div>
+                  <span>Mismatch</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-red-500 mr-1 rounded"></div>
+                  <span>Gap</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-sky-500 mr-1 rounded"></div>
+                  <span>Trend</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Conservation Score */}
+            <div className="bg-gray-900 rounded-lg p-4 md:col-span-2">
+              <h3 className="text-md font-semibold mb-3">Alignment Regions</h3>
+              <div className="w-full h-10 flex">
+                {similarityData.map((d, i) => {
+                  let color = 'bg-gray-700';
+                  
+                  // Check for conserved regions (consistent matching)
+                  if (i > 0 && i < similarityData.length - 1) {
+                    if (d.rollingAverage > 0.7) {
+                      color = 'bg-green-700';
+                    } else if (d.rollingAverage > 0.3) {
+                      color = 'bg-green-600/50';
+                    } else if (d.rollingAverage < -0.3) {
+                      color = 'bg-red-600/50';
+                    } else if (d.rollingAverage < -0.7) {
+                      color = 'bg-red-700';
+                    } else {
+                      color = 'bg-yellow-600/50';
+                    }
+                  }
+                  
+                  return (
+                    <div
+                      key={i}
+                      className={`h-full ${color}`}
+                      style={{ width: `${100 / alignedSeq1.length}%` }}
+                      title={`Position ${i+1}: ${alignedSeq1[i]}/${alignedSeq2[i]}`}
+                    ></div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-between text-xs text-gray-400 mt-2">
+                <div>1</div>
+                <div>{Math.round(alignedSeq1.length / 4)}</div>
+                <div>{Math.round(alignedSeq1.length / 2)}</div>
+                <div>{Math.round(3 * alignedSeq1.length / 4)}</div>
+                <div>{alignedSeq1.length}</div>
+              </div>
+              <div className="flex justify-between text-xs text-gray-400 mt-3">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-700 mr-1 rounded"></div>
+                  <span>Highly Conserved</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-600/50 mr-1 rounded"></div>
+                  <span>Conserved</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-yellow-600/50 mr-1 rounded"></div>
+                  <span>Variable</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-red-600/50 mr-1 rounded"></div>
+                  <span>Divergent</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-red-700 mr-1 rounded"></div>
+                  <span>Highly Divergent</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
     return null;
   }
 
@@ -1050,6 +1342,13 @@ function InfoPageContent() {
                   >
                     Interactive View
                   </button>
+                  <button 
+                    onClick={() => setAlignmentViewMode('comparative')}
+                    className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'comparative' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+                    title="Comparative charts and analytics"
+                  >
+                    Comparative Charts
+                  </button>
                 </div>
                 {alignmentViewMode === 'detailed' && (
                   <div className="bg-gray-700/50 rounded-lg p-3 mb-4 text-sm">
@@ -1057,6 +1356,15 @@ function InfoPageContent() {
                       This visualization presents a detailed analysis of the alignment.
                       Each row shows a pair of aligned characters, their type (match, mismatch, or gap),
                       the score at that position, and the cumulative score up to that point.
+                    </p>
+                  </div>
+                )}
+                {alignmentViewMode === 'comparative' && (
+                  <div className="bg-gray-700/50 rounded-lg p-3 mb-4 text-sm">
+                    <p className="text-gray-300">
+                      This view provides analytical charts to better understand the alignment characteristics.
+                      It includes composition analysis, sequence comparison, similarity profiles, and 
+                      conservation regions to help identify patterns and features in the alignment.
                     </p>
                   </div>
                 )}
