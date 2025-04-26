@@ -27,11 +27,16 @@ function InfoPageContent() {
   const [copySuccess, setCopySuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [progressStatus, setProgressStatus] = useState("Initializing...")
-  const [matrixViewMode, setMatrixViewMode] = useState<'standard' | 'heatmap' | 'arrows' | 'colorful' | 'gradient'>('standard')
+  const [matrixViewMode, setMatrixViewMode] = useState<'standard' | 'heatmap' | 'arrows' | 'colorful' | 'gradient' | 'highlight'>('standard')
   const [showDifferenceHighlight, setShowDifferenceHighlight] = useState(false)
   const [alignmentViewMode, setAlignmentViewMode] = useState<'blocks' | 'linear' | 'detailed' | 'compact' | 'interactive' | 'comparative'>('blocks')
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [hoverIntentTimeout, setHoverIntentTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [selectedCell, setSelectedCell] = useState<{i: number, j: number} | null>(null)
+  const [highlightMode, setHighlightMode] = useState<'selected' | 'path' | 'maximum' | 'minimum' | 'custom' | 'diagonal' | 'above' | 'below' | 'pattern'>('selected')
+  const [highlightAlignmentIndices, setHighlightAlignmentIndices] = useState<number[]>([])
+  const [thresholdValue, setThresholdValue] = useState<number>(0)
+  const [patternType, setPatternType] = useState<'matches' | 'mismatches' | 'gaps' | 'positive' | 'negative'>('matches')
 
   useEffect(() => {
     // Retrieve parameters from URL
@@ -244,6 +249,83 @@ function InfoPageContent() {
     };
   }, [hoverIntentTimeout]);
 
+  // Função para lidar com o clique na célula
+  const handleCellClick = (i: number, j: number) => {
+    setSelectedCell({i, j});
+    
+    // Calcular os índices do alinhamento correspondentes a esta célula
+    if (i > 0 && j > 0) {
+      calculateAlignmentIndicesFromCell(i, j);
+    } else {
+      setHighlightAlignmentIndices([]);
+    }
+  };
+
+  // Função para calcular os índices do alinhamento que correspondem a uma célula da matriz
+  const calculateAlignmentIndicesFromCell = (i: number, j: number) => {
+    // Reconstruir o caminho de traceback da célula até a origem
+    let currentI = i;
+    let currentJ = j;
+    const path: {i: number, j: number}[] = [{i: currentI, j: currentJ}];
+    
+    // Seguir o caminho de traceback até alcançar a origem
+    while (currentI > 0 || currentJ > 0) {
+      const direction = tracebackMatrix[currentI][currentJ];
+      
+      if (direction === 'D' && currentI > 0 && currentJ > 0) {
+        currentI--;
+        currentJ--;
+      } else if (direction === 'U' && currentI > 0) {
+        currentI--;
+      } else if (direction === 'L' && currentJ > 0) {
+        currentJ--;
+      } else {
+        break;
+      }
+      
+      path.push({i: currentI, j: currentJ});
+    }
+    
+    // Mapear o caminho para os índices correspondentes no alinhamento
+    // Começamos do fim do alinhamento e recuamos
+    let alignmentIndex = alignedSeq1.length - 1;
+    let matrixI = scoreMatrix.length - 1;
+    let matrixJ = scoreMatrix[0].length - 1;
+    const indices: number[] = [];
+    
+    // Mapeia a posição final da matriz (canto inferior direito) para o fim do alinhamento
+    if (matrixI === i && matrixJ === j) {
+      indices.push(alignmentIndex);
+    }
+    
+    // Traceback completo do alinhamento para encontrar correspondências
+    while (matrixI > 0 || matrixJ > 0) {
+      const direction = tracebackMatrix[matrixI][matrixJ];
+      
+      // Verificar se esta célula da matriz está no caminho que estamos procurando
+      if (path.some(cell => cell.i === matrixI && cell.j === matrixJ)) {
+        indices.push(alignmentIndex);
+      }
+      
+      // Mover para a próxima posição conforme o traceback
+      if (direction === 'D' && matrixI > 0 && matrixJ > 0) {
+        matrixI--;
+        matrixJ--;
+        alignmentIndex--;
+      } else if (direction === 'U' && matrixI > 0) {
+        matrixI--;
+        alignmentIndex--;
+      } else if (direction === 'L' && matrixJ > 0) {
+        matrixJ--;
+        alignmentIndex--;
+      } else {
+        break;
+      }
+    }
+    
+    setHighlightAlignmentIndices(indices);
+  };
+
   // Render matrix with colored values
   const renderMatrix = () => {
     if (!seq1 || !seq2 || scoreMatrix.length === 0) return null
@@ -251,12 +333,25 @@ function InfoPageContent() {
     // Cálculo do valor mínimo e máximo para o heatmap
     let minValue = Infinity;
     let maxValue = -Infinity;
+    let maxPositions: {i: number, j: number}[] = [];
+    let minPositions: {i: number, j: number}[] = [];
     
-    if (matrixViewMode === 'heatmap' || matrixViewMode === 'colorful' || matrixViewMode === 'gradient') {
-      scoreMatrix.forEach(row => {
-        row.forEach(score => {
-          minValue = Math.min(minValue, score);
-          maxValue = Math.max(maxValue, score);
+    if (matrixViewMode === 'heatmap' || matrixViewMode === 'colorful' || matrixViewMode === 'gradient' || matrixViewMode === 'highlight') {
+      scoreMatrix.forEach((row, i) => {
+        row.forEach((score, j) => {
+          if (score < minValue) {
+            minValue = score;
+            minPositions = [{i, j}];
+          } else if (score === minValue) {
+            minPositions.push({i, j});
+          }
+          
+          if (score > maxValue) {
+            maxValue = score;
+            maxPositions = [{i, j}];
+          } else if (score === maxValue) {
+            maxPositions.push({i, j});
+          }
         });
       });
     }
@@ -302,6 +397,102 @@ function InfoPageContent() {
         return 'rgb(90, 90, 90)';
       }
     };
+    
+    // Função para verificar se uma célula está em uma trajetória de alinhamento
+    const isCellInPath = (i: number, j: number): boolean => {
+      if (!selectedCell) return false;
+      
+      // Iniciar da célula selecionada e seguir o caminho de traceback
+      let currentI = selectedCell.i;
+      let currentJ = selectedCell.j;
+      const path: {i: number, j: number}[] = [{i: currentI, j: currentJ}];
+      
+      // Seguir o caminho de traceback até alcançar a origem ou a borda
+      while (currentI > 0 || currentJ > 0) {
+        const direction = tracebackMatrix[currentI][currentJ];
+        
+        if (direction === 'D' && currentI > 0 && currentJ > 0) {
+          currentI--;
+          currentJ--;
+        } else if (direction === 'U' && currentI > 0) {
+          currentI--;
+        } else if (direction === 'L' && currentJ > 0) {
+          currentJ--;
+        } else {
+          break; // Em caso de problema com o traceback
+        }
+        
+        path.push({i: currentI, j: currentJ});
+      }
+      
+      return path.some(cell => cell.i === i && cell.j === j);
+    };
+    
+    // Função para identificar se uma célula deve ser destacada
+    const shouldHighlightCell = (i: number, j: number): boolean => {
+      if (matrixViewMode !== 'highlight') return false;
+      
+      if (highlightMode === 'selected' && selectedCell && i === selectedCell.i && j === selectedCell.j) {
+        return true;
+      }
+      
+      if (highlightMode === 'path' && isCellInPath(i, j)) {
+        return true;
+      }
+      
+      if (highlightMode === 'maximum') {
+        return maxPositions.some(pos => pos.i === i && pos.j === j);
+      }
+      
+      if (highlightMode === 'minimum') {
+        return minPositions.some(pos => pos.i === i && pos.j === j);
+      }
+      
+      if (highlightMode === 'custom' && scoreMatrix[i][j] === (selectedCell ? scoreMatrix[selectedCell.i][selectedCell.j] : null)) {
+        return true;
+      }
+      
+      if (highlightMode === 'diagonal' && i === j) {
+        return true;
+      }
+      
+      if (highlightMode === 'above' && scoreMatrix[i][j] > thresholdValue) {
+        return true;
+      }
+      
+      if (highlightMode === 'below' && scoreMatrix[i][j] < thresholdValue) {
+        return true;
+      }
+      
+      if (highlightMode === 'pattern') {
+        // Verificar padrões específicos
+        if (i === 0 || j === 0) return false; // Ignorar bordas
+        
+        if (patternType === 'matches' && i > 0 && j > 0 && seq1[i-1] === seq2[j-1]) {
+          return true;
+        }
+        
+        if (patternType === 'mismatches' && i > 0 && j > 0 && seq1[i-1] !== seq2[j-1] && seq1[i-1] !== '-' && seq2[j-1] !== '-') {
+          return true;
+        }
+        
+        if (patternType === 'gaps') {
+          // Verificar se esta célula corresponde a um gap (movimentos verticais ou horizontais)
+          const direction = tracebackMatrix[i][j];
+          return direction === 'U' || direction === 'L';
+        }
+        
+        if (patternType === 'positive' && scoreMatrix[i][j] > 0) {
+          return true;
+        }
+        
+        if (patternType === 'negative' && scoreMatrix[i][j] < 0) {
+          return true;
+        }
+      }
+      
+      return false;
+    };
 
     return (
       <div className="overflow-x-auto mt-6">
@@ -336,6 +527,12 @@ function InfoPageContent() {
           >
             Gradient
           </button>
+          <button 
+            onClick={() => setMatrixViewMode('highlight')}
+            className={`px-3 py-1 text-sm rounded ${matrixViewMode === 'highlight' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+          >
+            Highlight
+          </button>
           <label className="flex items-center gap-2 ml-auto">
             <input 
               type="checkbox" 
@@ -346,6 +543,116 @@ function InfoPageContent() {
             <span className="text-sm">Highlight Differences</span>
           </label>
         </div>
+        
+        {matrixViewMode === 'highlight' && (
+          <div className="flex flex-wrap gap-4 mb-4 bg-gray-800 p-3 rounded-lg">
+            <button 
+              onClick={() => setHighlightMode('selected')}
+              className={`px-3 py-1 text-xs rounded ${highlightMode === 'selected' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+            >
+              Selected Cell
+            </button>
+            <button 
+              onClick={() => setHighlightMode('path')}
+              className={`px-3 py-1 text-xs rounded ${highlightMode === 'path' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+            >
+              Traceback Path
+            </button>
+            <button 
+              onClick={() => setHighlightMode('maximum')}
+              className={`px-3 py-1 text-xs rounded ${highlightMode === 'maximum' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+            >
+              Maximum Values ({maxValue})
+            </button>
+            <button 
+              onClick={() => setHighlightMode('minimum')}
+              className={`px-3 py-1 text-xs rounded ${highlightMode === 'minimum' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+            >
+              Minimum Values ({minValue})
+            </button>
+            <button 
+              onClick={() => setHighlightMode('custom')}
+              className={`px-3 py-1 text-xs rounded ${highlightMode === 'custom' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+            >
+              Same Values
+            </button>
+            <button 
+              onClick={() => setHighlightMode('diagonal')}
+              className={`px-3 py-1 text-xs rounded ${highlightMode === 'diagonal' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+            >
+              Diagonal
+            </button>
+            <button 
+              onClick={() => setHighlightMode('above')}
+              className={`px-3 py-1 text-xs rounded ${highlightMode === 'above' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+            >
+              Above Threshold
+            </button>
+            <button 
+              onClick={() => setHighlightMode('below')}
+              className={`px-3 py-1 text-xs rounded ${highlightMode === 'below' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+            >
+              Below Threshold
+            </button>
+            <button 
+              onClick={() => setHighlightMode('pattern')}
+              className={`px-3 py-1 text-xs rounded ${highlightMode === 'pattern' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+            >
+              Patterns
+            </button>
+            
+            {/* Controles adicionais que aparecem dependendo do modo selecionado */}
+            {(highlightMode === 'above' || highlightMode === 'below') && (
+              <div className="flex items-center gap-2 w-full mt-2">
+                <span className="text-xs">Threshold:</span>
+                <input 
+                  type="range" 
+                  min={minValue} 
+                  max={maxValue} 
+                  value={thresholdValue}
+                  onChange={(e) => setThresholdValue(Number(e.target.value))}
+                  className="w-full"
+                />
+                <span className="text-xs w-10 text-right">{thresholdValue}</span>
+              </div>
+            )}
+            
+            {highlightMode === 'pattern' && (
+              <div className="flex flex-wrap gap-2 w-full mt-2">
+                <button
+                  onClick={() => setPatternType('matches')}
+                  className={`px-2 py-0.5 text-xs rounded ${patternType === 'matches' ? 'bg-green-600' : 'bg-gray-700'}`}
+                >
+                  Matches
+                </button>
+                <button
+                  onClick={() => setPatternType('mismatches')}
+                  className={`px-2 py-0.5 text-xs rounded ${patternType === 'mismatches' ? 'bg-yellow-600' : 'bg-gray-700'}`}
+                >
+                  Mismatches
+                </button>
+                <button
+                  onClick={() => setPatternType('gaps')}
+                  className={`px-2 py-0.5 text-xs rounded ${patternType === 'gaps' ? 'bg-red-600' : 'bg-gray-700'}`}
+                >
+                  Gaps
+                </button>
+                <button
+                  onClick={() => setPatternType('positive')}
+                  className={`px-2 py-0.5 text-xs rounded ${patternType === 'positive' ? 'bg-emerald-600' : 'bg-gray-700'}`}
+                >
+                  Positive Values
+                </button>
+                <button
+                  onClick={() => setPatternType('negative')}
+                  className={`px-2 py-0.5 text-xs rounded ${patternType === 'negative' ? 'bg-rose-600' : 'bg-gray-700'}`}
+                >
+                  Negative Values
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         
         <table className="border-collapse text-center min-w-fit">
           <thead>
@@ -370,7 +677,7 @@ function InfoPageContent() {
                   // Determinar a cor de fundo com base no modo de visualização
                   let bgColor = 'bg-gray-700';
                   let arrowSymbol = '';
-                  let diffStyle = {};
+                  let diffStyle: React.CSSProperties = {};
                   
                   if (matrixViewMode === 'standard') {
                     if (i > 0 && j > 0) {
@@ -401,6 +708,22 @@ function InfoPageContent() {
                     } else if (direction === 'L') {
                       arrowSymbol = '←';
                     }
+                  } else if (matrixViewMode === 'highlight') {
+                    // Modo de destaque
+                    if (shouldHighlightCell(i, j)) {
+                      diffStyle = { 
+                        backgroundColor: 'rgba(14, 165, 233, 0.6)',
+                        boxShadow: '0 0 5px rgba(14, 165, 233, 0.8) inset'
+                      };
+                    }
+                  }
+
+                  // Adicionar destaque para célula selecionada em qualquer modo
+                  if (selectedCell && selectedCell.i === i && selectedCell.j === j && matrixViewMode !== 'highlight') {
+                    diffStyle = {
+                      ...diffStyle,
+                      boxShadow: '0 0 0 2px white inset'
+                    };
                   }
                   
                   // Destacar diferenças entre células adjacentes
@@ -432,8 +755,9 @@ function InfoPageContent() {
                   return (
                     <td 
                       key={j} 
-                      className={`border border-gray-600 p-2 ${bgColor} w-10 h-10 relative`}
+                      className={`border border-gray-600 p-2 ${bgColor} w-10 h-10 relative cursor-pointer hover:opacity-80 transition-opacity`}
                       style={diffStyle}
+                      onClick={() => handleCellClick(i, j)}
                     >
                       <div>{score}</div>
                       {matrixViewMode === 'arrows' && (
@@ -454,6 +778,37 @@ function InfoPageContent() {
             ))}
           </tbody>
         </table>
+        
+        {selectedCell && (
+          <div className="mt-4 bg-gray-800 p-3 rounded-lg text-sm">
+            <h4 className="font-semibold mb-1">Célula Selecionada:</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div>
+                <span className="text-gray-400">Posição:</span> {selectedCell.i}×{selectedCell.j}
+              </div>
+              <div>
+                <span className="text-gray-400">Valor:</span> {scoreMatrix[selectedCell.i][selectedCell.j]}
+              </div>
+              <div>
+                <span className="text-gray-400">Direção:</span> {tracebackMatrix[selectedCell.i][selectedCell.j]}
+              </div>
+              <div>
+                <span className="text-gray-400">Caracteres:</span> {selectedCell.i > 0 ? seq1[selectedCell.i-1] : '-'}×{selectedCell.j > 0 ? seq2[selectedCell.j-1] : '-'}
+              </div>
+            </div>
+            {highlightAlignmentIndices.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-gray-700">
+                <span className="text-gray-400">Posições destacadas no alinhamento:</span> {highlightAlignmentIndices.length}
+                <button 
+                  onClick={() => setHighlightAlignmentIndices([])}
+                  className="ml-2 px-2 py-0.5 text-xs rounded bg-gray-700 hover:bg-gray-600"
+                >
+                  Limpar
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -471,6 +826,8 @@ function InfoPageContent() {
               <div
                 key={index}
                 className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${
+                  highlightAlignmentIndices.includes(index) ? 'ring-2 ring-white scale-110 z-10' : ''
+                } ${
                   char === "-" ? "bg-red-500" : char === alignedSeq2[index] ? "bg-green-500" : "bg-yellow-500"
                 }`}
               >
@@ -480,7 +837,9 @@ function InfoPageContent() {
           </div>
           <div className="flex flex-row flex-nowrap min-w-fit mt-1">
             {alignedSeq1.map((char, index) => (
-              <div key={index} className="p-2 font-mono w-8 h-8 flex items-center justify-center">
+              <div key={index} className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${
+                highlightAlignmentIndices.includes(index) ? 'text-white font-bold' : ''
+              }`}>
                 {char === alignedSeq2[index] ? "|" : char === "-" || alignedSeq2[index] === "-" ? " " : "."}
               </div>
             ))}
@@ -490,6 +849,8 @@ function InfoPageContent() {
               <div
                 key={index}
                 className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${
+                  highlightAlignmentIndices.includes(index) ? 'ring-2 ring-white scale-110 z-10' : ''
+                } ${
                   char === "-" ? "bg-red-500" : char === alignedSeq1[index] ? "bg-green-500" : "bg-yellow-500"
                 }`}
               >
@@ -498,7 +859,7 @@ function InfoPageContent() {
             ))}
           </div>
         </div>
-      )
+      );
     }
     
     // Visualização linear (estilo texto com cores)
@@ -525,13 +886,15 @@ function InfoPageContent() {
                   {positions.map(i => (
                     <span 
                       key={i} 
-                      className={
+                      className={`
+                        ${highlightAlignmentIndices.includes(i) ? 'font-bold ring-1 ring-white px-0.5' : ''}
+                        ${
                         alignedSeq1[i] === "-" 
                           ? "text-red-500"
                           : alignedSeq1[i] === alignedSeq2[i]
                             ? "text-green-500"
                             : "text-yellow-500"
-                      }
+                      }`}
                     >
                       {alignedSeq1[i]}
                     </span>
@@ -540,7 +903,7 @@ function InfoPageContent() {
                 <div className="font-mono text-sm sm:text-base md:text-lg my-1">
                   <span className="text-gray-400 mr-2 invisible">...:</span>
                   {positions.map(i => (
-                    <span key={i}>
+                    <span key={i} className={`${highlightAlignmentIndices.includes(i) ? 'font-bold text-white' : ''}`}>
                       {alignedSeq1[i] === alignedSeq2[i] ? "|" : alignedSeq1[i] === "-" || alignedSeq2[i] === "-" ? " " : "."}
                     </span>
                   ))}
@@ -550,13 +913,15 @@ function InfoPageContent() {
                   {positions.map(i => (
                     <span 
                       key={i} 
-                      className={
+                      className={`
+                        ${highlightAlignmentIndices.includes(i) ? 'font-bold ring-1 ring-white px-0.5' : ''}
+                        ${
                         alignedSeq2[i] === "-" 
                           ? "text-red-500"
                           : alignedSeq2[i] === alignedSeq1[i]
                             ? "text-green-500"
                             : "text-yellow-500"
-                      }
+                      }`}
                     >
                       {alignedSeq2[i]}
                     </span>
@@ -582,21 +947,21 @@ function InfoPageContent() {
               {alignedSeq1.map((char, index) => (
                 <span 
                   key={index} 
-                  className={
+                  className={`
+                    ${highlightAlignmentIndices.includes(index) ? 'font-bold ring-1 ring-white px-0.5' : ''}
+                    ${
                     char === "-" 
                       ? "text-red-500"
                       : char === alignedSeq2[index]
                         ? "text-green-500"
                         : "text-yellow-500"
-                  }
+                    }`}
                 >
                   {char}
                 </span>
               ))}
             </div>
-            
             <div className="border-t border-gray-700 my-2"></div>
-            
             <div className="flex justify-between mb-2">
               <span className="text-gray-400">Seq2:</span>
               <span className="text-gray-400 text-xs">({alignedSeq2.length} characters)</span>
@@ -605,25 +970,25 @@ function InfoPageContent() {
               {alignedSeq2.map((char, index) => (
                 <span 
                   key={index} 
-                  className={
+                  className={`
+                    ${highlightAlignmentIndices.includes(index) ? 'font-bold ring-1 ring-white px-0.5' : ''}
+                    ${
                     char === "-" 
                       ? "text-red-500"
                       : char === alignedSeq1[index]
                         ? "text-green-500"
                         : "text-yellow-500"
-                  }
+                    }`}
                 >
                   {char}
                 </span>
               ))}
             </div>
-            
             <div className="border-t border-gray-700 my-2"></div>
-            
             <div className="text-gray-400 mb-1">Matches:</div>
             <div>
               {alignedSeq1.map((char, index) => (
-                <span key={index}>
+                <span key={index} className={`${highlightAlignmentIndices.includes(index) ? 'font-bold text-white' : ''}`}>
                   {char === alignedSeq2[index] ? "|" : char === "-" || alignedSeq2[index] === "-" ? " " : "."}
                 </span>
               ))}
@@ -686,6 +1051,7 @@ function InfoPageContent() {
                     className={`
                       w-8 h-8 m-px flex items-center justify-center font-mono transition-all duration-150
                       ${index === hoveredIndex ? 'ring-2 ring-white scale-110 z-10' : ''}
+                      ${highlightAlignmentIndices.includes(index) ? 'ring-2 ring-cyan-400 z-10' : ''}
                       ${char === "-" 
                         ? "bg-red-500"
                         : char === alignedSeq2[index]
@@ -711,6 +1077,7 @@ function InfoPageContent() {
                     className={`
                       w-8 h-8 m-px flex items-center justify-center font-mono transition-all duration-150
                       ${index === hoveredIndex ? 'ring-2 ring-white scale-110 z-10' : ''}
+                      ${highlightAlignmentIndices.includes(index) ? 'ring-2 ring-cyan-400 z-10' : ''}
                       ${char === "-" 
                         ? "bg-red-500"
                         : char === alignedSeq1[index]
@@ -1285,6 +1652,12 @@ function InfoPageContent() {
                       <>
                         Visualization with color gradient based on values, with green for
                         positive values and red for negative values, varying in intensity.
+                      </>
+                    )}
+                    {matrixViewMode === 'highlight' && (
+                      <>
+                        Visualization that highlights specific cells based on criteria.
+                        Click on cells to select them and choose a highlight mode to see patterns and insights in the alignment matrix.
                       </>
                     )}
                   </p>
