@@ -310,31 +310,31 @@ function InfoPageContent() {
             onClick={() => setMatrixViewMode('standard')}
             className={`px-3 py-1 text-sm rounded ${matrixViewMode === 'standard' ? 'bg-cyan-600' : 'bg-gray-700'}`}
           >
-            Padrão
+            Standard
           </button>
           <button 
             onClick={() => setMatrixViewMode('heatmap')}
             className={`px-3 py-1 text-sm rounded ${matrixViewMode === 'heatmap' ? 'bg-cyan-600' : 'bg-gray-700'}`}
           >
-            Mapa de calor
+            Heatmap
           </button>
           <button 
             onClick={() => setMatrixViewMode('arrows')}
             className={`px-3 py-1 text-sm rounded ${matrixViewMode === 'arrows' ? 'bg-cyan-600' : 'bg-gray-700'}`}
           >
-            Setas de traceback
+            Traceback Arrows
           </button>
           <button 
             onClick={() => setMatrixViewMode('colorful')}
             className={`px-3 py-1 text-sm rounded ${matrixViewMode === 'colorful' ? 'bg-cyan-600' : 'bg-gray-700'}`}
           >
-            Colorido
+            Colorful
           </button>
           <button 
             onClick={() => setMatrixViewMode('gradient')}
             className={`px-3 py-1 text-sm rounded ${matrixViewMode === 'gradient' ? 'bg-cyan-600' : 'bg-gray-700'}`}
           >
-            Gradiente
+            Gradient
           </button>
           <label className="flex items-center gap-2 ml-auto">
             <input 
@@ -343,7 +343,7 @@ function InfoPageContent() {
               onChange={() => setShowDifferenceHighlight(!showDifferenceHighlight)}
               className="rounded text-cyan-600 focus:ring-cyan-500"
             />
-            <span className="text-sm">Destacar diferenças</span>
+            <span className="text-sm">Highlight Differences</span>
           </label>
         </div>
         
@@ -519,7 +519,7 @@ function InfoPageContent() {
             
             return (
               <div key={chunkIdx} className="mb-6">
-                <div className="text-gray-400 text-xs mb-1">Posição: {startIndex + 1}-{endIndex}</div>
+                <div className="text-gray-400 text-xs mb-1">Position: {startIndex + 1}-{endIndex}</div>
                 <div className="font-mono text-sm sm:text-base md:text-lg break-all whitespace-pre-wrap">
                   <span className="text-gray-400 mr-2">Seq1:</span>
                   {positions.map(i => (
@@ -576,7 +576,7 @@ function InfoPageContent() {
           <div className="font-mono text-sm break-all whitespace-pre-wrap bg-gray-900 p-4 rounded">
             <div className="flex justify-between mb-2">
               <span className="text-gray-400">Seq1:</span>
-              <span className="text-gray-400 text-xs">({alignedSeq1.length} caracteres)</span>
+              <span className="text-gray-400 text-xs">({alignedSeq1.length} characters)</span>
             </div>
             <div>
               {alignedSeq1.map((char, index) => (
@@ -599,7 +599,7 @@ function InfoPageContent() {
             
             <div className="flex justify-between mb-2">
               <span className="text-gray-400">Seq2:</span>
-              <span className="text-gray-400 text-xs">({alignedSeq2.length} caracteres)</span>
+              <span className="text-gray-400 text-xs">({alignedSeq2.length} characters)</span>
             </div>
             <div>
               {alignedSeq2.map((char, index) => (
@@ -620,7 +620,7 @@ function InfoPageContent() {
             
             <div className="border-t border-gray-700 my-2"></div>
             
-            <div className="text-gray-400 mb-1">Correspondência:</div>
+            <div className="text-gray-400 mb-1">Matches:</div>
             <div>
               {alignedSeq1.map((char, index) => (
                 <span key={index}>
@@ -639,7 +639,7 @@ function InfoPageContent() {
         <div className="bg-gray-800 rounded-lg p-5 relative">
           <div className="mb-6">
             <div className="text-sm text-gray-400 mb-2">
-              Passe o mouse sobre os caracteres para ver detalhes
+              Hover over characters to see details
             </div>
             
             {/* Tooltip fixo que não afeta o layout */}
@@ -652,7 +652,7 @@ function InfoPageContent() {
                      maxWidth: '250px',
                      pointerEvents: 'none' // Não interfere com os eventos de mouse
                    }}>
-                <div className="font-bold border-b border-gray-700 pb-1 mb-2">Posição: {hoveredIndex + 1}</div>
+                <div className="font-bold border-b border-gray-700 pb-1 mb-2">Position: {hoveredIndex + 1}</div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                   <div>Seq1:</div> 
                   <div className={alignedSeq1[hoveredIndex] === "-" ? "text-red-500 font-bold" : "text-white"}>
@@ -662,13 +662,13 @@ function InfoPageContent() {
                   <div className={alignedSeq2[hoveredIndex] === "-" ? "text-red-500 font-bold" : "text-white"}>
                     {alignedSeq2[hoveredIndex]}
                   </div>
-                  <div>Tipo:</div>
+                  <div>Type:</div>
                   <div>
                     {alignedSeq1[hoveredIndex] === alignedSeq2[hoveredIndex] 
-                      ? <span className="text-green-500">Correspondência</span>
+                      ? <span className="text-green-500">Match</span>
                       : alignedSeq1[hoveredIndex] === "-" || alignedSeq2[hoveredIndex] === "-"
                         ? <span className="text-red-500">Gap</span>
-                        : <span className="text-yellow-500">Incompatibilidade</span>
+                        : <span className="text-yellow-500">Mismatch</span>
                     }
                   </div>
                 </div>
@@ -678,7 +678,7 @@ function InfoPageContent() {
           
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <div className="text-sm text-gray-400 mb-1">Sequência 1:</div>
+              <div className="text-sm text-gray-400 mb-1">Sequence 1:</div>
               <div className="flex flex-wrap">
                 {alignedSeq1.map((char, index) => (
                   <div 
@@ -703,7 +703,7 @@ function InfoPageContent() {
             </div>
             
             <div>
-              <div className="text-sm text-gray-400 mb-1">Sequência 2:</div>
+              <div className="text-sm text-gray-400 mb-1">Sequence 2:</div>
               <div className="flex flex-wrap">
                 {alignedSeq2.map((char, index) => (
                   <div 
@@ -779,12 +779,12 @@ function InfoPageContent() {
           <table className="min-w-full border-collapse">
             <thead>
               <tr className="text-left">
-                <th className="p-2 border-b border-gray-700">Posição</th>
+                <th className="p-2 border-b border-gray-700">Position</th>
                 <th className="p-2 border-b border-gray-700">Seq1</th>
                 <th className="p-2 border-b border-gray-700">Seq2</th>
-                <th className="p-2 border-b border-gray-700">Tipo</th>
-                <th className="p-2 border-b border-gray-700">Pontuação</th>
-                <th className="p-2 border-b border-gray-700">Acumulado</th>
+                <th className="p-2 border-b border-gray-700">Type</th>
+                <th className="p-2 border-b border-gray-700">Score</th>
+                <th className="p-2 border-b border-gray-700">Cumulative</th>
               </tr>
             </thead>
             <tbody>
@@ -816,7 +816,7 @@ function InfoPageContent() {
                         ? "text-red-500"
                         : "text-yellow-500"
                   }`}>
-                    {item.type === "match" ? "Correspondência" : item.type === "gap" ? "Gap" : "Incompatibilidade"}
+                    {item.type === "match" ? "Match" : item.type === "gap" ? "Gap" : "Mismatch"}
                   </td>
                   <td className="p-2 border-b border-gray-700">
                     <span className={item.positionScore > 0 ? "text-green-500" : "text-red-500"}>
@@ -947,15 +947,15 @@ function InfoPageContent() {
 
               <div className="mt-10">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg md:text-xl font-bold">Matrix de Pontuação</h2>
+                  <h2 className="text-lg md:text-xl font-bold">Scoring Matrix</h2>
                   <div className="flex items-center">
                     <div className="bg-gray-800 rounded-full w-5 h-5 flex items-center justify-center mr-2 cursor-help group relative">
                       <span className="text-xs text-gray-300">?</span>
                       <div className="absolute hidden group-hover:block bottom-full right-0 mb-2 w-64 p-2 bg-gray-900 rounded shadow-lg text-xs text-gray-300 z-10">
-                        A matriz de pontuação é a estrutura central do algoritmo, onde cada célula 
-                        representa a pontuação máxima para o alinhamento das subsequências 
-                        até aquele ponto. Experimente diferentes modos de visualização para entender 
-                        melhor como o algoritmo funciona.
+                        The scoring matrix is the central structure of the algorithm, where each cell 
+                        represents the maximum score for the alignment of subsequences 
+                        up to that point. Try different visualization modes to better understand 
+                        how the algorithm works.
                       </div>
                     </div>
                   </div>
@@ -965,34 +965,34 @@ function InfoPageContent() {
                     A matriz de pontuação mostra os valores calculados durante a execução do algoritmo.
                     {matrixViewMode === 'standard' && (
                       <>
-                        As cores indicam o tipo de operação: <span className="text-green-400">correspondência</span>, 
-                        <span className="text-yellow-400"> incompatibilidade</span>, ou <span className="text-red-400">gap</span>.
-                        As letras no canto inferior direito de cada célula indicam a direção do traceback:
-                        D (diagonal), U (para cima), L (para esquerda).
+                        The colors indicate the type of operation: <span className="text-green-400">match</span>, 
+                        <span className="text-yellow-400"> mismatch</span>, or <span className="text-red-400">gap</span>.
+                        The letters in the bottom right corner of each cell indicate the traceback direction:
+                        D (diagonal), U (up), L (left).
                       </>
                     )}
                     {matrixViewMode === 'heatmap' && (
                       <>
-                        O mapa de calor representa os valores numéricos: tons mais quentes (vermelho) 
-                        indicam valores mais altos e tons mais frios (azul) indicam valores mais baixos.
+                        The heatmap represents numerical values: warmer tones (red) 
+                        indicate higher values and cooler tones (blue) indicate lower values.
                       </>
                     )}
                     {matrixViewMode === 'arrows' && (
                       <>
-                        As setas indicam a direção do traceback: ↖ (diagonal), ↑ (para cima), ← (para esquerda).
-                        Estas setas mostram o caminho que o algoritmo segue para construir o alinhamento final.
+                        The arrows indicate the traceback direction: ↖ (diagonal), ↑ (up), ← (left).
+                        These arrows show the path the algorithm follows to build the final alignment.
                       </>
                     )}
                     {matrixViewMode === 'colorful' && (
                       <>
-                        Visualização em cores vibrantes que representam os valores da matriz em um espectro do arco-íris,
-                        facilitando a identificação de padrões e regiões de alto valor.
+                        Visualization with vibrant colors representing matrix values in a rainbow spectrum,
+                        facilitating identification of patterns and high-value regions.
                       </>
                     )}
                     {matrixViewMode === 'gradient' && (
                       <>
-                        Visualização com gradiente de cores baseado nos valores, com verde para 
-                        valores positivos e vermelho para negativos, variando em intensidade.
+                        Visualization with color gradient based on values, with green for
+                        positive values and red for negative values, varying in intensity.
                       </>
                     )}
                   </p>
@@ -1002,14 +1002,14 @@ function InfoPageContent() {
 
               <div className="mt-10">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg md:text-xl font-bold">Visualização do Alinhamento</h2>
+                  <h2 className="text-lg md:text-xl font-bold">Alignment Visualization</h2>
                   <div className="flex items-center">
                     <div className="bg-gray-800 rounded-full w-5 h-5 flex items-center justify-center mr-2 cursor-help group relative">
                       <span className="text-xs text-gray-300">?</span>
                       <div className="absolute hidden group-hover:block bottom-full right-0 mb-2 w-64 p-2 bg-gray-900 rounded shadow-lg text-xs text-gray-300 z-10">
-                        Esta seção mostra o alinhamento final das duas sequências após a 
-                        aplicação do algoritmo Needleman-Wunsch. Os gaps (-) são inseridos 
-                        para otimizar o alinhamento conforme os parâmetros definidos.
+                        This section shows the final alignment of the two sequences after
+                        applying the Needleman-Wunsch algorithm. Gaps (-) are inserted
+                        to optimize the alignment according to the defined parameters.
                       </div>
                     </div>
                   </div>
@@ -1018,45 +1018,45 @@ function InfoPageContent() {
                   <button 
                     onClick={() => setAlignmentViewMode('blocks')}
                     className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'blocks' ? 'bg-cyan-600' : 'bg-gray-700'}`}
-                    title="Visualização de caracteres em blocos coloridos"
+                    title="Visualization of characters in colored blocks"
                   >
-                    Visualização em blocos
+                    Block View
                   </button>
                   <button 
                     onClick={() => setAlignmentViewMode('linear')}
                     className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'linear' ? 'bg-cyan-600' : 'bg-gray-700'}`}
-                    title="Exibição em formato de texto com cores para facilitar a leitura"
+                    title="Display in text format with colors for easier reading"
                   >
-                    Visualização linear
+                    Linear View
                   </button>
                   <button 
                     onClick={() => setAlignmentViewMode('detailed')}
                     className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'detailed' ? 'bg-cyan-600' : 'bg-gray-700'}`}
-                    title="Análise posição por posição com detalhes de pontuação"
+                    title="Position-by-position analysis with scoring details"
                   >
-                    Análise detalhada
+                    Detailed Analysis
                   </button>
                   <button 
                     onClick={() => setAlignmentViewMode('compact')}
                     className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'compact' ? 'bg-cyan-600' : 'bg-gray-700'}`}
-                    title="Visualização compacta das sequências alinhadas"
+                    title="Compact view of aligned sequences"
                   >
-                    Visualização compacta
+                    Compact View
                   </button>
                   <button 
                     onClick={() => setAlignmentViewMode('interactive')}
                     className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'interactive' ? 'bg-cyan-600' : 'bg-gray-700'}`}
-                    title="Visualização interativa com detalhes ao passar o mouse"
+                    title="Interactive visualization with hover details"
                   >
-                    Visualização interativa
+                    Interactive View
                   </button>
                 </div>
                 {alignmentViewMode === 'detailed' && (
                   <div className="bg-gray-700/50 rounded-lg p-3 mb-4 text-sm">
                     <p className="text-gray-300">
-                      Esta visualização apresenta uma análise detalhada do alinhamento.
-                      Cada linha mostra um par de caracteres alinhados, seu tipo (correspondência, incompatibilidade ou gap),
-                      a pontuação daquela posição e a pontuação acumulada até aquele ponto.
+                      This visualization presents a detailed analysis of the alignment.
+                      Each row shows a pair of aligned characters, their type (match, mismatch, or gap),
+                      the score at that position, and the cumulative score up to that point.
                     </p>
                   </div>
                 )}
