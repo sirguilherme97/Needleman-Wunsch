@@ -27,9 +27,9 @@ function InfoPageContent() {
   const [copySuccess, setCopySuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [progressStatus, setProgressStatus] = useState("Initializing...")
-  const [matrixViewMode, setMatrixViewMode] = useState<'standard' | 'heatmap' | 'arrows'>('standard')
+  const [matrixViewMode, setMatrixViewMode] = useState<'standard' | 'heatmap' | 'arrows' | 'colorful' | '3d'>('standard')
   const [showDifferenceHighlight, setShowDifferenceHighlight] = useState(false)
-  const [alignmentViewMode, setAlignmentViewMode] = useState<'blocks' | 'linear' | 'detailed'>('blocks')
+  const [alignmentViewMode, setAlignmentViewMode] = useState<'blocks' | 'linear' | 'detailed' | 'compact' | 'interactive'>('blocks')
 
   useEffect(() => {
     // Retrieve parameters from URL
@@ -212,7 +212,7 @@ function InfoPageContent() {
     let minValue = Infinity;
     let maxValue = -Infinity;
     
-    if (matrixViewMode === 'heatmap') {
+    if (matrixViewMode === 'heatmap' || matrixViewMode === 'colorful') {
       scoreMatrix.forEach(row => {
         row.forEach(score => {
           minValue = Math.min(minValue, score);
@@ -231,6 +231,16 @@ function InfoPageContent() {
       const b = Math.floor((1 - normalized) * 255);
       
       return `rgb(${r}, 0, ${b})`;
+    };
+    
+    // Função para gerar cores vibrantes para o modo colorful
+    const getColorfulColor = (value: number) => {
+      // Normaliza o valor entre 0 e 1
+      const normalized = (value - minValue) / (maxValue - minValue || 1);
+      
+      // Criar um esquema de cores do arco-íris
+      const hue = normalized * 270; // 0 a 270 graus do círculo de cores (azul a vermelho)
+      return `hsl(${hue}, 100%, 50%)`;
     };
 
     return (
@@ -254,6 +264,18 @@ function InfoPageContent() {
           >
             Setas de traceback
           </button>
+          <button 
+            onClick={() => setMatrixViewMode('colorful')}
+            className={`px-3 py-1 text-sm rounded ${matrixViewMode === 'colorful' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+          >
+            Colorido
+          </button>
+          <button 
+            onClick={() => setMatrixViewMode('3d')}
+            className={`px-3 py-1 text-sm rounded ${matrixViewMode === '3d' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+          >
+            3D
+          </button>
           <label className="flex items-center gap-2 ml-auto">
             <input 
               type="checkbox" 
@@ -261,108 +283,170 @@ function InfoPageContent() {
               onChange={() => setShowDifferenceHighlight(!showDifferenceHighlight)}
               className="rounded text-cyan-600 focus:ring-cyan-500"
             />
-            <span className="text-sm">Destacar diferenças entre células</span>
+            <span className="text-sm">Destacar diferenças</span>
           </label>
         </div>
-        <table className="border-collapse text-center min-w-fit">
-          <thead>
-            <tr>
-              <th className="border border-gray-600 p-2 bg-gray-800"></th>
-              <th className="border border-gray-600 p-2 bg-gray-800"></th>
-              {seq2.split('').map((char, idx) => (
-                <th key={idx} className="border border-gray-600 p-2 bg-gray-800 w-10 h-10">{char}</th>
+        
+        {matrixViewMode === '3d' ? (
+          <div className="bg-gray-700 rounded-lg p-6 relative h-96 flex items-center justify-center">
+            <div className="transform preserve-3d perspective-1000 w-full h-full relative">
+              {scoreMatrix.map((row, i) => (
+                <div 
+                  key={i} 
+                  className="absolute"
+                  style={{
+                    transform: `translateZ(${i * 15}px) translateY(${i * 5}px)`,
+                    left: '50%',
+                    marginLeft: `-${row.length * 20}px`,
+                  }}
+                >
+                  <div className="flex">
+                    {row.map((score, j) => {
+                      const height = Math.max(5, (score - minValue) / (maxValue - minValue || 1) * 80);
+                      const direction = tracebackMatrix[i][j];
+                      let bgColor = 'rgba(75, 85, 99, 0.8)';
+                      
+                      if (i > 0 && j > 0) {
+                        if (direction === 'D') {
+                          bgColor = seq1[i-1] === seq2[j-1] 
+                            ? 'rgba(16, 185, 129, 0.8)' // verde
+                            : 'rgba(245, 158, 11, 0.8)'; // amarelo
+                        } else if (direction === 'U' || direction === 'L') {
+                          bgColor = 'rgba(239, 68, 68, 0.8)'; // vermelho
+                        }
+                      }
+                      
+                      return (
+                        <div 
+                          key={j}
+                          className="w-10 flex flex-col items-center mx-px"
+                        >
+                          <div 
+                            className="w-8 flex items-end justify-center text-xs font-bold"
+                            style={{
+                              height: `${height}px`,
+                              backgroundColor: bgColor,
+                              transition: 'height 0.5s ease-out'
+                            }}
+                          >
+                            <span className="mb-1">{score}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {scoreMatrix.map((row, i) => (
-              <tr key={i}>
-                <th className="border border-gray-600 p-2 bg-gray-800">
-                  {i === 0 ? '' : seq1[i-1]}
-                </th>
-                {row.map((score, j) => {
-                  // Determinar a direção do traceback
-                  const direction = tracebackMatrix[i][j];
-                  
-                  // Determinar a cor de fundo com base no modo de visualização
-                  let bgColor = 'bg-gray-700';
-                  let arrowSymbol = '';
-                  let diffStyle = {};
-                  
-                  if (matrixViewMode === 'standard') {
-                    if (i > 0 && j > 0) {
+            </div>
+            <div className="absolute top-2 left-2 text-xs text-gray-300">
+              Visualização 3D: move o mouse sobre a matriz para explorar
+            </div>
+          </div>
+        ) : (
+          <table className="border-collapse text-center min-w-fit">
+            <thead>
+              <tr>
+                <th className="border border-gray-600 p-2 bg-gray-800"></th>
+                <th className="border border-gray-600 p-2 bg-gray-800"></th>
+                {seq2.split('').map((char, idx) => (
+                  <th key={idx} className="border border-gray-600 p-2 bg-gray-800 w-10 h-10">{char}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {scoreMatrix.map((row, i) => (
+                <tr key={i}>
+                  <th className="border border-gray-600 p-2 bg-gray-800">
+                    {i === 0 ? '' : seq1[i-1]}
+                  </th>
+                  {row.map((score, j) => {
+                    // Determinar a direção do traceback
+                    const direction = tracebackMatrix[i][j];
+                    
+                    // Determinar a cor de fundo com base no modo de visualização
+                    let bgColor = 'bg-gray-700';
+                    let arrowSymbol = '';
+                    let diffStyle = {};
+                    
+                    if (matrixViewMode === 'standard') {
+                      if (i > 0 && j > 0) {
+                        if (direction === 'D') {
+                          bgColor = seq1[i-1] === seq2[j-1] ? 'bg-green-700' : 'bg-yellow-700';
+                        } else if (direction === 'U' || direction === 'L') {
+                          bgColor = 'bg-red-700';
+                        }
+                      }
+                    } else if (matrixViewMode === 'heatmap') {
+                      // Usar o estilo inline para o heatmap
+                      bgColor = '';
+                      diffStyle = { backgroundColor: getHeatMapColor(score) };
+                    } else if (matrixViewMode === 'colorful') {
+                      // Usar o estilo inline para cores vibrantes
+                      bgColor = '';
+                      diffStyle = { backgroundColor: getColorfulColor(score) };
+                    } else if (matrixViewMode === 'arrows') {
+                      // Visualização com setas
                       if (direction === 'D') {
-                        bgColor = seq1[i-1] === seq2[j-1] ? 'bg-green-700' : 'bg-yellow-700';
-                      } else if (direction === 'U' || direction === 'L') {
-                        bgColor = 'bg-red-700';
+                        arrowSymbol = '↖';
+                      } else if (direction === 'U') {
+                        arrowSymbol = '↑';
+                      } else if (direction === 'L') {
+                        arrowSymbol = '←';
                       }
                     }
-                  } else if (matrixViewMode === 'heatmap') {
-                    // Usar o estilo inline para o heatmap
-                    bgColor = '';
-                    diffStyle = { backgroundColor: getHeatMapColor(score) };
-                  } else if (matrixViewMode === 'arrows') {
-                    // Visualização com setas
-                    if (direction === 'D') {
-                      arrowSymbol = '↖';
-                    } else if (direction === 'U') {
-                      arrowSymbol = '↑';
-                    } else if (direction === 'L') {
-                      arrowSymbol = '←';
+                    
+                    // Destacar diferenças entre células adjacentes
+                    let diffHighlight = null;
+                    if (showDifferenceHighlight && i > 0 && j > 0) {
+                      const diagonal = scoreMatrix[i-1][j-1];
+                      const up = scoreMatrix[i-1][j];
+                      const left = scoreMatrix[i][j-1];
+                      
+                      const diagonalDiff = score - diagonal;
+                      const upDiff = score - up;
+                      const leftDiff = score - left;
+                      
+                      diffHighlight = (
+                        <div className="absolute text-[9px] flex flex-col opacity-70">
+                          <span className={`${diagonalDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '-12px', left: '-12px'}}>
+                            {diagonalDiff > 0 ? '+' : ''}{diagonalDiff}
+                          </span>
+                          <span className={`${upDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '-12px', left: '5px'}}>
+                            {upDiff > 0 ? '+' : ''}{upDiff}
+                          </span>
+                          <span className={`${leftDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '5px', left: '-12px'}}>
+                            {leftDiff > 0 ? '+' : ''}{leftDiff}
+                          </span>
+                        </div>
+                      );
                     }
-                  }
-                  
-                  // Destacar diferenças entre células adjacentes
-                  let diffHighlight = null;
-                  if (showDifferenceHighlight && i > 0 && j > 0) {
-                    const diagonal = scoreMatrix[i-1][j-1];
-                    const up = scoreMatrix[i-1][j];
-                    const left = scoreMatrix[i][j-1];
                     
-                    const diagonalDiff = score - diagonal;
-                    const upDiff = score - up;
-                    const leftDiff = score - left;
-                    
-                    diffHighlight = (
-                      <div className="absolute text-[9px] flex flex-col opacity-70">
-                        <span className={`${diagonalDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '-12px', left: '-12px'}}>
-                          {diagonalDiff > 0 ? '+' : ''}{diagonalDiff}
-                        </span>
-                        <span className={`${upDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '-12px', left: '5px'}}>
-                          {upDiff > 0 ? '+' : ''}{upDiff}
-                        </span>
-                        <span className={`${leftDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '5px', left: '-12px'}}>
-                          {leftDiff > 0 ? '+' : ''}{leftDiff}
-                        </span>
-                      </div>
+                    return (
+                      <td 
+                        key={j} 
+                        className={`border border-gray-600 p-2 ${bgColor} w-10 h-10 relative`}
+                        style={diffStyle}
+                      >
+                        <div>{score}</div>
+                        {matrixViewMode === 'arrows' && (
+                          <div className="text-xl absolute inset-0 flex items-center justify-center text-cyan-300">
+                            {arrowSymbol}
+                          </div>
+                        )}
+                        {matrixViewMode !== 'arrows' && (
+                          <div className="absolute bottom-0 right-0 text-xs opacity-70">
+                            {direction}
+                          </div>
+                        )}
+                        {showDifferenceHighlight && diffHighlight}
+                      </td>
                     );
-                  }
-                  
-                  return (
-                    <td 
-                      key={j} 
-                      className={`border border-gray-600 p-2 ${bgColor} w-10 h-10 relative`}
-                      style={diffStyle}
-                    >
-                      <div>{score}</div>
-                      {matrixViewMode === 'arrows' && (
-                        <div className="text-xl absolute inset-0 flex items-center justify-center text-cyan-300">
-                          {arrowSymbol}
-                        </div>
-                      )}
-                      {matrixViewMode !== 'arrows' && (
-                        <div className="absolute bottom-0 right-0 text-xs opacity-70">
-                          {direction}
-                        </div>
-                      )}
-                      {showDifferenceHighlight && diffHighlight}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     );
   }
@@ -474,6 +558,146 @@ function InfoPageContent() {
               </div>
             );
           })}
+        </div>
+      );
+    }
+    
+    // Visualização compacta
+    if (alignmentViewMode === 'compact') {
+      return (
+        <div className="bg-gray-800 rounded-lg p-5">
+          <div className="font-mono text-sm break-all whitespace-pre-wrap bg-gray-900 p-4 rounded">
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-400">Seq1:</span>
+              <span className="text-gray-400 text-xs">({alignedSeq1.length} caracteres)</span>
+            </div>
+            <div>
+              {alignedSeq1.map((char, index) => (
+                <span 
+                  key={index} 
+                  className={
+                    char === "-" 
+                      ? "text-red-500"
+                      : char === alignedSeq2[index]
+                        ? "text-green-500"
+                        : "text-yellow-500"
+                  }
+                >
+                  {char}
+                </span>
+              ))}
+            </div>
+            
+            <div className="border-t border-gray-700 my-2"></div>
+            
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-400">Seq2:</span>
+              <span className="text-gray-400 text-xs">({alignedSeq2.length} caracteres)</span>
+            </div>
+            <div>
+              {alignedSeq2.map((char, index) => (
+                <span 
+                  key={index} 
+                  className={
+                    char === "-" 
+                      ? "text-red-500"
+                      : char === alignedSeq1[index]
+                        ? "text-green-500"
+                        : "text-yellow-500"
+                  }
+                >
+                  {char}
+                </span>
+              ))}
+            </div>
+            
+            <div className="border-t border-gray-700 my-2"></div>
+            
+            <div className="text-gray-400 mb-1">Correspondência:</div>
+            <div>
+              {alignedSeq1.map((char, index) => (
+                <span key={index}>
+                  {char === alignedSeq2[index] ? "|" : char === "-" || alignedSeq2[index] === "-" ? " " : "."}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    // Visualização interativa
+    if (alignmentViewMode === 'interactive') {
+      const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+      
+      return (
+        <div className="bg-gray-800 rounded-lg p-5">
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-sm text-gray-400">
+              Passe o mouse sobre os caracteres para ver detalhes
+            </div>
+            {hoveredIndex !== null && (
+              <div className="bg-gray-900 rounded p-2 text-sm">
+                <div>Posição: {hoveredIndex + 1}</div>
+                <div>Seq1: <span className={alignedSeq1[hoveredIndex] === "-" ? "text-red-500" : "text-white"}>{alignedSeq1[hoveredIndex]}</span></div>
+                <div>Seq2: <span className={alignedSeq2[hoveredIndex] === "-" ? "text-red-500" : "text-white"}>{alignedSeq2[hoveredIndex]}</span></div>
+                <div>
+                  {alignedSeq1[hoveredIndex] === alignedSeq2[hoveredIndex] 
+                    ? <span className="text-green-500">Correspondência</span>
+                    : alignedSeq1[hoveredIndex] === "-" || alignedSeq2[hoveredIndex] === "-"
+                      ? <span className="text-red-500">Gap</span>
+                      : <span className="text-yellow-500">Incompatibilidade</span>
+                  }
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-1 gap-2">
+            <div className="flex flex-wrap">
+              {alignedSeq1.map((char, index) => (
+                <div 
+                  key={index} 
+                  className={`
+                    w-8 h-8 m-px flex items-center justify-center font-mono
+                    ${index === hoveredIndex ? 'ring-2 ring-white' : ''}
+                    ${char === "-" 
+                      ? "bg-red-500"
+                      : char === alignedSeq2[index]
+                        ? "bg-green-500"
+                        : "bg-yellow-500"
+                    }
+                  `}
+                  onMouseEnter={() => setHoveredIndex(index)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                >
+                  {char}
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex flex-wrap">
+              {alignedSeq2.map((char, index) => (
+                <div 
+                  key={index} 
+                  className={`
+                    w-8 h-8 m-px flex items-center justify-center font-mono
+                    ${index === hoveredIndex ? 'ring-2 ring-white' : ''}
+                    ${char === "-" 
+                      ? "bg-red-500"
+                      : char === alignedSeq1[index]
+                        ? "bg-green-500"
+                        : "bg-yellow-500"
+                    }
+                  `}
+                  onMouseEnter={() => setHoveredIndex(index)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                >
+                  {char}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       );
     }
@@ -693,17 +917,6 @@ function InfoPageContent() {
               </div>
 
               <div className="mt-10">
-                <h2 className="text-lg md:text-xl font-bold mb-4">Visualization Options</h2>
-                <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-gray-300">
-                    Escolha diferentes modos de visualização para entender melhor o algoritmo Needleman-Wunsch 
-                    e analisar o alinhamento de diferentes perspectivas. Cada modo oferece insights únicos 
-                    sobre como as sequências são alinhadas.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-10">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg md:text-xl font-bold">Matrix de Pontuação</h2>
                   <div className="flex items-center">
@@ -739,6 +952,18 @@ function InfoPageContent() {
                       <>
                         As setas indicam a direção do traceback: ↖ (diagonal), ↑ (para cima), ← (para esquerda).
                         Estas setas mostram o caminho que o algoritmo segue para construir o alinhamento final.
+                      </>
+                    )}
+                    {matrixViewMode === 'colorful' && (
+                      <>
+                        Visualização em cores vibrantes que representam os valores da matriz em um espectro do arco-íris,
+                        facilitando a identificação de padrões e regiões de alto valor.
+                      </>
+                    )}
+                    {matrixViewMode === '3d' && (
+                      <>
+                        Visualização tridimensional onde a altura representa o valor de cada célula.
+                        Ajuda a identificar visualmente as "montanhas" e "vales" na matriz de pontuação.
                       </>
                     )}
                   </p>
@@ -781,6 +1006,20 @@ function InfoPageContent() {
                     title="Análise posição por posição com detalhes de pontuação"
                   >
                     Análise detalhada
+                  </button>
+                  <button 
+                    onClick={() => setAlignmentViewMode('compact')}
+                    className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'compact' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+                    title="Visualização compacta das sequências alinhadas"
+                  >
+                    Visualização compacta
+                  </button>
+                  <button 
+                    onClick={() => setAlignmentViewMode('interactive')}
+                    className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'interactive' ? 'bg-cyan-600' : 'bg-gray-700'}`}
+                    title="Visualização interativa com detalhes ao passar o mouse"
+                  >
+                    Visualização interativa
                   </button>
                 </div>
                 {alignmentViewMode === 'detailed' && (
