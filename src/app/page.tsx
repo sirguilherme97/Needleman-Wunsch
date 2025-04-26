@@ -91,7 +91,8 @@ export default function AlignmentContainer() {
                         mismatchPenalty={mismatchPenalty}
                     />
                 </div>
-                <div className="text-[#ededed] cursor-default grid grid-cols-1 md:grid-cols-2 pt-10 max-w-xl md:max-w-none px-5 md:px-10 md:py-32 bg-[#0e0e0e] w-full h-auto">
+                <div className="text-[#ededed] cursor-default grid grid-cols-1 md:grid-cols-2 pt-10 max-w-xl md:max-w-none px-5 md:px-10 md:py-32 bg-[#0e0e0e]/90 w-full h-auto">
+
                     <div className="col-span-2 md:col-span-1 sm:mr-2">
                         <h1 className="font-bold text-white text-xl">Needleman-Wunsch Algorithm: Approach</h1>
                         <p className="mt-3 max-w-2xl">The Needleman-Wunsch algorithm is a fundamental technique in bioinformatics, widely used for global sequence alignment of DNA, RNA, or proteins. Developed by Saul B. Needleman and Christian D. Wunsch in 1970, this algorithm laid the groundwork for many subsequent alignment algorithms. Below, we provide a detailed explanation of this algorithm, highlighting its key concepts and steps.</p>
@@ -125,52 +126,59 @@ export default function AlignmentContainer() {
                         <h2 className="mt-10 font-bold text-white text-xl">Conclusion</h2>
                         <p className="mt-3">The Needleman-Wunsch algorithm is an essential tool in biological sequence analysis, enabling the comparison and alignment of sequences to better understand their function and evolution. Its understanding is fundamental to many tasks in bioinformatics and computational biology.</p>
                     </div>
+
                     <div className="col-span-2 px-10 pt-20">
                         <h1 className="text-center py-10 text-white font-bold text-xl">Links of Interest</h1>
+                        {/* <div className="text-center mb-4">
+                            <a href="/links" className="text-blue-500 hover:text-blue-700 transition-all">
+                                Ver página completa de links →
+                            </a>
+                        </div> */}
                     </div>
-                    <div className="col-span-2 grid sm:grid-cols-2 md:grid-cols-3 gap-3 pt-5 z-3">
-                        <a href="https://www.rcsb.org/" target="blank">
-                            <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
-                                <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">Protein DataBank</h1>
-                                <p className="mt-5 text-sm">The Protein Data Bank (PDB) is a publicly accessible database that provides information about the three-dimensional structure of biological molecules, such as proteins and nucleic acids. It contains experimental data obtained through techniques like X-ray crystallography and nuclear magnetic resonance, allowing researchers to visualize and analyze the structure of proteins and other macromolecules.</p>
-                            </div>
-                        </a>
-                        <a href="https://www.ncbi.nlm.nih.gov/" target="blank">
-                            <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
-                                <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">National Library of Medicine (PubMed)</h1>
-                                <p className="mt-5 text-sm">The National Library of Medicine (NLM) is a U.S. institution part of the National Institutes of Health (NIH). It houses a vast array of resources and databases related to biomedicine and life sciences. The website provides access to scientific articles, genomic sequence databases, public health information, and much more.</p>
-                            </div>
-                        </a>
-                        <a href="https://genome.ucsc.edu/" target="blank">
-                            <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
-                                <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">University of California Santa Cruz - Genome Browser</h1>
-                                <p className="mt-5 text-sm">The UCSC Genome Browser is an online tool that allows visualization and analysis of genomes from various species. It provides access to annotated genomic sequences and offers an interactive interface to explore genomic data, including genes, genetic variants, regulatory regions, and more. This tool is widely used by researchers in molecular biology, genetics, and bioinformatics.</p>
-                            </div>
-                        </a>
-                        <a href="https://www.ebi.ac.uk/pdbe/" target="blank">
-                            <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
-                                <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">Protein Data Bank Europe (PDBe)</h1>
-                                <p className="mt-5 text-sm">A protein database containing structural information about experimentally determined proteins solved by X-ray crystallography, nuclear magnetic resonance, and modeling.</p>
-                            </div>
-                        </a>
-                        <a href="https://www.uniprot.org/" target="blank">
-                            <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
-                                <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">UniProt</h1>
-                                <p className="mt-5 text-sm">A comprehensive protein database providing access to data on protein function, location, expression, and more.</p>
-                            </div>
-                        </a>
-                        <a href="https://www.ensembl.org/index.html" target="blank">
-                            <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
-                                <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">Ensembl</h1>
-                                <p className="mt-5 text-sm">A project aimed at providing annotated genomes from various species, with a particular emphasis on vertebrate genomes.</p>
-                            </div>
-                        </a>
-                        <a href="https://www.ebi.ac.uk/interpro/" target="blank">
-                            <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
-                                <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">InterPro</h1>
-                                <p className="mt-5 text-sm">InterPro is a database that provides integrated protein classifications, grouping proteins into families and predicting domains and binding sites from their sequences. Using various bioinformatics tools and resources, InterPro aids in the functional and structural analysis of proteins, facilitating the understanding of their biological functions and interactions.</p>
-                            </div>
-                        </a>
+                    <div className="col-span-2 grid sm:grid-cols-2 md:grid-cols-3 gap-3 pt-5 z-3 relative h-auto">
+                        {/* Overlay com degradê que bloqueia interação com os links */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(14,14,14,0.9)] to-[#0e0e0e] z-10 pointer-events-auto h-auto"></div>
+                        {/* Botão para acessar a página completa de links */}
+                        <div className="absolute bottom-0 left-0 right-0 z-20 flex justify-center py-10">
+                            <a href="/links" className="bg-gray-500 hover:bg-gray-200 text-white hover:text-gray-800 font-bold py-2 px-6 rounded-full transition-all">
+                               See all links
+                            </a>
+                        </div>
+                        
+                        <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
+                            <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">Protein DataBank</h1>
+                            <p className="mt-5 text-sm">The Protein Data Bank (PDB) is a publicly accessible database that provides information about the three-dimensional structure of biological molecules, such as proteins and nucleic acids. It contains experimental data obtained through techniques like X-ray crystallography and nuclear magnetic resonance, allowing researchers to visualize and analyze the structure of proteins and other macromolecules.</p>
+                        </div>
+                        
+                        <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
+                            <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">National Library of Medicine (PubMed)</h1>
+                            <p className="mt-5 text-sm">The National Library of Medicine (NLM) is a U.S. institution part of the National Institutes of Health (NIH). It houses a vast array of resources and databases related to biomedicine and life sciences. The website provides access to scientific articles, genomic sequence databases, public health information, and much more.</p>
+                        </div>
+                        
+                        <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
+                            <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">University of California Santa Cruz - Genome Browser</h1>
+                            <p className="mt-5 text-sm">The UCSC Genome Browser is an online tool that allows visualization and analysis of genomes from various species. It provides access to annotated genomic sequences and offers an interactive interface to explore genomic data, including genes, genetic variants, regulatory regions, and more. This tool is widely used by researchers in molecular biology, genetics, and bioinformatics.</p>
+                        </div>
+                        
+                        <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
+                            <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">Protein Data Bank Europe (PDBe)</h1>
+                            <p className="mt-5 text-sm">A protein database containing structural information about experimentally determined proteins solved by X-ray crystallography, nuclear magnetic resonance, and modeling.</p>
+                        </div>
+                        
+                        <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
+                            <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">UniProt</h1>
+                            <p className="mt-5 text-sm">A comprehensive protein database providing access to data on protein function, location, expression, and more.</p>
+                        </div>
+                        
+                        <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
+                            <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">Ensembl</h1>
+                            <p className="mt-5 text-sm">A project aimed at providing annotated genomes from various species, with a particular emphasis on vertebrate genomes.</p>
+                        </div>
+                        
+                        <div className="group border border-[#0e0e0e] h-auto p-2 col-span-1 hover:border hover:border-gray-500 rounded-lg transition-all cursor-pointer">
+                            <h1 className="mt-3 text-white underline group-hover:text-blue-500 transition-all">InterPro</h1>
+                            <p className="mt-5 text-sm">InterPro is a database that provides integrated protein classifications, grouping proteins into families and predicting domains and binding sites from their sequences. Using various bioinformatics tools and resources, InterPro aids in the functional and structural analysis of proteins, facilitating the understanding of their biological functions and interactions.</p>
+                        </div>
                     </div>
                 </div>
                 <div className="w-full bg-gradient-to-t from-cyan-950 to-[#0e0e0e] h-full px-5 md:px-10 py-5 text-white flex items-center justify-center gap-1 sm:gap-5">

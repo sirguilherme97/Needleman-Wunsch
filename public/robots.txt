@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://needleman-wunsch.vercel.app
+
+# Sitemaps
+Sitemap: https://needleman-wunsch.vercel.app/sitemap.xml
