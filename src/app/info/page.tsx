@@ -1,10 +1,11 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 
-export default function InfoPage() {
+// Componente que usa useSearchParams
+function InfoPageContent() {
   const searchParams = useSearchParams()
   const [seq1, setSeq1] = useState("")
   const [seq2, setSeq2] = useState("")
@@ -458,5 +459,19 @@ export default function InfoPage() {
         <a className="underline hover:text-blue-500 transition-all" href="https://github.com/sirguilherme97/" target="blank">Github</a>
       </div>
     </main>
+  )
+}
+
+// Componente principal envolvido em Suspense
+export default function InfoPage() {
+  return (
+    <Suspense fallback={
+      <div className="w-full flex min-h-screen flex-col items-center justify-center bg-gradient-to-l from-cyan-950 to-black">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-cyan-500 mb-4"></div>
+        <p className="text-cyan-400 text-lg">Carregando...</p>
+      </div>
+    }>
+      <InfoPageContent />
+    </Suspense>
   )
 } 

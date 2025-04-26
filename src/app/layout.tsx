@@ -3,8 +3,10 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 import { Analytics } from "@vercel/analytics/react"
+
 export const metadata: Metadata = {
   title: "Needleman-Wunsch Algorithm",
+  metadataBase: new URL(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"),
   openGraph: {
     title: "Needleman-Wunsch Algorithm",
     description: "Explore o algoritmo de Needleman-Wunsch, uma poderosa técnica de alinhamento global de sequências amplamente utilizada em bioinformática e análise de sequências genéticas. Descubra como este algoritmo eficiente e flexível pode ser aplicado para comparar e encontrar similaridades entre sequências de DNA, RNA ou proteínas. Aprofunde-se neste método fundamental para entender a evolução molecular e a estrutura genética, e descubra suas aplicações em diversas áreas da ciência e da pesquisa biomédica.",
