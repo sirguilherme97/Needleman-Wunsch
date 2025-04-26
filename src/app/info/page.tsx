@@ -1633,241 +1633,7 @@ function InfoPageContent() {
         <div className="bg-gray-800 rounded-lg p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Botões de zoom compartilhados */}
-            <div className="md:col-span-2 flex gap-2 mb-2">
-              <button
-                onClick={() => setZoomRange(null)}
-                className={`px-3 py-1 text-xs rounded ${!zoomRange ? 'bg-cyan-600' : 'bg-gray-700'}`}
-              >
-                Visualizar Tudo
-              </button>
-              {alignedSeq1.length > 10 && (
-                <>
-                  <button
-                    onClick={() => {
-                      // Dividir em 3 partes iguais e mostrar a primeira parte
-                      const sectionSize = Math.ceil(alignedSeq1.length / 3);
-                      handleZoomChange(0, sectionSize - 1);
-                    }}
-                    className={`px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600`}
-                  >
-                    Início (1/3)
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Dividir em 3 partes iguais e mostrar a parte do meio
-                      const sectionSize = Math.ceil(alignedSeq1.length / 3);
-                      const startIndex = sectionSize;
-                      const endIndex = Math.min(alignedSeq1.length - 1, startIndex + sectionSize - 1);
-                      handleZoomChange(startIndex, endIndex);
-                    }}
-                    className={`px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600`}
-                  >
-                    Meio (1/3)
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Dividir em 3 partes iguais e mostrar a última parte
-                      const sectionSize = Math.ceil(alignedSeq1.length / 3);
-                      const startIndex = sectionSize * 2;
-                      handleZoomChange(startIndex, alignedSeq1.length - 1);
-                    }}
-                    className={`px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600`}
-                  >
-                    Fim (1/3)
-                  </button>
-                  <select
-                    className="px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 ml-2"
-                    onChange={(e) => {
-                      const divisions = parseInt(e.target.value, 10);
-                      if (divisions) {
-                        // Calcular tamanho de cada divisão
-                        const sectionSize = Math.ceil(alignedSeq1.length / divisions);
-                        // Posicionar no meio
-                        const midPoint = Math.floor(divisions / 2);
-                        const startIndex = midPoint * sectionSize;
-                        const endIndex = Math.min(alignedSeq1.length - 1, startIndex + sectionSize - 1);
-                        handleZoomChange(startIndex, endIndex);
-                      } else {
-                        // Opção "Personalizado"
-                        setZoomRange(null);
-                      }
-                    }}
-                    defaultValue="0"
-                  >
-                    <option value="0">Divisões...</option>
-                    <option value="2">2 partes</option>
-                    <option value="3">3 partes</option>
-                    <option value="4">4 partes</option>
-                    <option value="5">5 partes</option>
-                    <option value="8">8 partes</option>
-                    <option value="10">10 partes</option>
-                  </select>
-                </>
-              )}
-              {zoomRange && (
-                <div className="ml-auto text-xs text-gray-400">
-                  Zoom: posições {zoomRange.start+1} - {zoomRange.end+1} ({zoomRange.end - zoomRange.start + 1} bases)
-                </div>
-              )}
-            </div>
             
-            {/* Controles de navegação horizontal */}
-            {zoomRange && (
-              <div className="md:col-span-2 flex justify-between items-center gap-2 mb-4">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      if (!zoomRange) return;
-                      
-                      const windowSize = zoomRange.end - zoomRange.start + 1;
-                      // Mover para o início
-                      handleZoomChange(0, windowSize - 1);
-                    }}
-                    disabled={zoomRange?.start === 0}
-                    className={`px-3 py-1 text-xs rounded ${zoomRange?.start === 0 ? 'bg-gray-800 opacity-50 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
-                    title="Ir para o início"
-                  >
-                    <span className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                      </svg>
-                      Início
-                    </span>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      if (!zoomRange) return;
-                      
-                      const windowSize = zoomRange.end - zoomRange.start + 1;
-                      const stepSize = Math.max(1, Math.floor(windowSize * 0.5)); // Mover 50% da janela
-                      const newStart = Math.max(0, zoomRange.start - stepSize);
-                      const newEnd = newStart + windowSize - 1;
-                      
-                      handleZoomChange(newStart, newEnd);
-                    }}
-                    disabled={zoomRange?.start === 0}
-                    className={`px-3 py-1 text-xs rounded ${zoomRange?.start === 0 ? 'bg-gray-800 opacity-50 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
-                    title="Mover para a esquerda"
-                  >
-                    <span className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                      Anterior
-                    </span>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      if (!zoomRange) return;
-                      
-                      const windowSize = zoomRange.end - zoomRange.start + 1;
-                      const stepSize = Math.max(1, Math.floor(windowSize * 0.1)); // Mover 10% da janela
-                      const newStart = Math.max(0, zoomRange.start - stepSize);
-                      const newEnd = newStart + windowSize - 1;
-                      
-                      handleZoomChange(newStart, newEnd);
-                    }}
-                    disabled={zoomRange?.start === 0}
-                    className={`px-3 py-1 text-xs rounded ${zoomRange?.start === 0 ? 'bg-gray-800 opacity-50 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
-                    title="Pequeno deslocamento para a esquerda"
-                  >
-                    <span className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5 5-5" />
-                      </svg>
-                    </span>
-                  </button>
-                </div>
-                
-                <div className="mx-auto">
-                  <input
-                    type="range"
-                    min={0}
-                    max={Math.max(0, alignedSeq1.length - (zoomRange.end - zoomRange.start + 1))}
-                    value={zoomRange.start}
-                    onChange={(e) => {
-                      const newStart = parseInt(e.target.value, 10);
-                      const windowSize = zoomRange.end - zoomRange.start + 1;
-                      const newEnd = Math.min(alignedSeq1.length - 1, newStart + windowSize - 1);
-                      handleZoomChange(newStart, newEnd);
-                    }}
-                    className="w-32 md:w-64 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-                    title="Deslize para navegar horizontalmente"
-                  />
-                </div>
-                
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      if (!zoomRange) return;
-                      
-                      const windowSize = zoomRange.end - zoomRange.start + 1;
-                      const stepSize = Math.max(1, Math.floor(windowSize * 0.1)); // Mover 10% da janela
-                      const newEnd = Math.min(alignedSeq1.length - 1, zoomRange.end + stepSize);
-                      const newStart = Math.max(0, newEnd - windowSize + 1);
-                      
-                      handleZoomChange(newStart, newEnd);
-                    }}
-                    disabled={zoomRange?.end === alignedSeq1.length - 1}
-                    className={`px-3 py-1 text-xs rounded ${zoomRange?.end === alignedSeq1.length - 1 ? 'bg-gray-800 opacity-50 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
-                    title="Pequeno deslocamento para a direita"
-                  >
-                    <span className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5-5 5" />
-                      </svg>
-                    </span>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      if (!zoomRange) return;
-                      
-                      const windowSize = zoomRange.end - zoomRange.start + 1;
-                      const stepSize = Math.max(1, Math.floor(windowSize * 0.5)); // Mover 50% da janela
-                      const newEnd = Math.min(alignedSeq1.length - 1, zoomRange.end + stepSize);
-                      const newStart = Math.max(0, newEnd - windowSize + 1);
-                      
-                      handleZoomChange(newStart, newEnd);
-                    }}
-                    disabled={zoomRange?.end === alignedSeq1.length - 1}
-                    className={`px-3 py-1 text-xs rounded ${zoomRange?.end === alignedSeq1.length - 1 ? 'bg-gray-800 opacity-50 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
-                    title="Mover para a direita"
-                  >
-                    <span className="flex items-center">
-                      Próximo
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </span>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      if (!zoomRange) return;
-                      
-                      const windowSize = zoomRange.end - zoomRange.start + 1;
-                      const newEnd = alignedSeq1.length - 1;
-                      const newStart = Math.max(0, newEnd - windowSize + 1);
-                      
-                      handleZoomChange(newStart, newEnd);
-                    }}
-                    disabled={zoomRange?.end === alignedSeq1.length - 1}
-                    className={`px-3 py-1 text-xs rounded ${zoomRange?.end === alignedSeq1.length - 1 ? 'bg-gray-800 opacity-50 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
-                    title="Ir para o fim"
-                  >
-                    <span className="flex items-center">
-                      Fim
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                      </svg>
-                    </span>
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Comparative Overview Chart */}
             <div className="bg-gray-900 rounded-lg p-4">
@@ -1966,6 +1732,242 @@ function InfoPageContent() {
               </div>
             </div>
             
+            <div className="md:col-span-2 flex gap-2 mb-2">
+              <button
+                onClick={() => setZoomRange(null)}
+                className={`px-3 py-1 text-xs rounded ${!zoomRange ? 'bg-cyan-600' : 'bg-gray-700'}`}
+              >
+                View All
+              </button>
+              {alignedSeq1.length > 10 && (
+                <>
+                  <button
+                    onClick={() => {
+                      // Dividir em 3 partes iguais e mostrar a primeira parte
+                      const sectionSize = Math.ceil(alignedSeq1.length / 3);
+                      handleZoomChange(0, sectionSize - 1);
+                    }}
+                    className={`px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600`}
+                  >
+                    Start (1/3)
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Dividir em 3 partes iguais e mostrar a parte do meio
+                      const sectionSize = Math.ceil(alignedSeq1.length / 3);
+                      const startIndex = sectionSize;
+                      const endIndex = Math.min(alignedSeq1.length - 1, startIndex + sectionSize - 1);
+                      handleZoomChange(startIndex, endIndex);
+                    }}
+                    className={`px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600`}
+                  >
+                    Middle (1/3)
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Dividir em 3 partes iguais e mostrar a última parte
+                      const sectionSize = Math.ceil(alignedSeq1.length / 3);
+                      const startIndex = sectionSize * 2;
+                      handleZoomChange(startIndex, alignedSeq1.length - 1);
+                    }}
+                    className={`px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600`}
+                  >
+                    End (1/3)
+                  </button>
+                  <select
+                    className="px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 ml-2"
+                    onChange={(e) => {
+                      const divisions = parseInt(e.target.value, 10);
+                      if (divisions) {
+                        // Calcular tamanho de cada divisão
+                        const sectionSize = Math.ceil(alignedSeq1.length / divisions);
+                        // Posicionar no meio
+                        const midPoint = Math.floor(divisions / 2);
+                        const startIndex = midPoint * sectionSize;
+                        const endIndex = Math.min(alignedSeq1.length - 1, startIndex + sectionSize - 1);
+                        handleZoomChange(startIndex, endIndex);
+                      } else {
+                        // Opção "Personalizado"
+                        setZoomRange(null);
+                      }
+                    }}
+                    defaultValue="0"
+                  >
+                    <option value="0">Divisions...</option>
+                    <option value="2">2 parts</option>
+                    <option value="3">3 parts</option>
+                    <option value="4">4 parts</option>
+                    <option value="5">5 parts</option>
+                    <option value="8">8 parts</option>
+                    <option value="10">10 parts</option>
+                  </select>
+                </>
+              )}
+              {zoomRange && (
+                <div className="ml-auto text-xs text-gray-400">
+                  Zoom: positions {zoomRange.start+1} - {zoomRange.end+1} ({zoomRange.end - zoomRange.start + 1} bases)
+                </div>
+              )}
+            </div>
+            
+            {/* Controles de navegação horizontal */}
+            {zoomRange && (
+              <div className="md:col-span-2 flex justify-between items-center gap-2 mb-4">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      if (!zoomRange) return;
+                      
+                      const windowSize = zoomRange.end - zoomRange.start + 1;
+                      // Mover para o início
+                      handleZoomChange(0, windowSize - 1);
+                    }}
+                    disabled={zoomRange?.start === 0}
+                    className={`px-3 py-1 text-xs rounded ${zoomRange?.start === 0 ? 'bg-gray-800 opacity-50 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
+                    title="Go to start"
+                  >
+                    <span className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                      </svg>
+                      Start
+                    </span>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      if (!zoomRange) return;
+                      
+                      const windowSize = zoomRange.end - zoomRange.start + 1;
+                      const stepSize = Math.max(1, Math.floor(windowSize * 0.5)); // Mover 50% da janela
+                      const newStart = Math.max(0, zoomRange.start - stepSize);
+                      const newEnd = newStart + windowSize - 1;
+                      
+                      handleZoomChange(newStart, newEnd);
+                    }}
+                    disabled={zoomRange?.start === 0}
+                    className={`px-3 py-1 text-xs rounded ${zoomRange?.start === 0 ? 'bg-gray-800 opacity-50 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
+                    title="Move left"
+                  >
+                    <span className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                      Previous
+                    </span>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      if (!zoomRange) return;
+                      
+                      const windowSize = zoomRange.end - zoomRange.start + 1;
+                      const stepSize = Math.max(1, Math.floor(windowSize * 0.1)); // Mover 10% da janela
+                      const newStart = Math.max(0, zoomRange.start - stepSize);
+                      const newEnd = newStart + windowSize - 1;
+                      
+                      handleZoomChange(newStart, newEnd);
+                    }}
+                    disabled={zoomRange?.start === 0}
+                    className={`px-3 py-1 text-xs rounded ${zoomRange?.start === 0 ? 'bg-gray-800 opacity-50 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
+                    title="Small shift to the left"
+                  >
+                    <span className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5 5-5" />
+                      </svg>
+                    </span>
+                  </button>
+                </div>
+                
+                <div className="mx-auto">
+                  <input
+                    type="range"
+                    min={0}
+                    max={Math.max(0, alignedSeq1.length - (zoomRange.end - zoomRange.start + 1))}
+                    value={zoomRange.start}
+                    onChange={(e) => {
+                      const newStart = parseInt(e.target.value, 10);
+                      const windowSize = zoomRange.end - zoomRange.start + 1;
+                      const newEnd = Math.min(alignedSeq1.length - 1, newStart + windowSize - 1);
+                      handleZoomChange(newStart, newEnd);
+                    }}
+                    className="w-32 md:w-64 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                    title="Slide to navigate horizontally"
+                  />
+                </div>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      if (!zoomRange) return;
+                      
+                      const windowSize = zoomRange.end - zoomRange.start + 1;
+                      const stepSize = Math.max(1, Math.floor(windowSize * 0.1)); // Mover 10% da janela
+                      const newEnd = Math.min(alignedSeq1.length - 1, zoomRange.end + stepSize);
+                      const newStart = Math.max(0, newEnd - windowSize + 1);
+                      
+                      handleZoomChange(newStart, newEnd);
+                    }}
+                    disabled={zoomRange?.end === alignedSeq1.length - 1}
+                    className={`px-3 py-1 text-xs rounded ${zoomRange?.end === alignedSeq1.length - 1 ? 'bg-gray-800 opacity-50 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
+                    title="Small shift to the right"
+                  >
+                    <span className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5-5 5" />
+                      </svg>
+                    </span>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      if (!zoomRange) return;
+                      
+                      const windowSize = zoomRange.end - zoomRange.start + 1;
+                      const stepSize = Math.max(1, Math.floor(windowSize * 0.5)); // Mover 50% da janela
+                      const newEnd = Math.min(alignedSeq1.length - 1, zoomRange.end + stepSize);
+                      const newStart = Math.max(0, newEnd - windowSize + 1);
+                      
+                      handleZoomChange(newStart, newEnd);
+                    }}
+                    disabled={zoomRange?.end === alignedSeq1.length - 1}
+                    className={`px-3 py-1 text-xs rounded ${zoomRange?.end === alignedSeq1.length - 1 ? 'bg-gray-800 opacity-50 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
+                    title="Move right"
+                  >
+                    <span className="flex items-center">
+                      Next
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      if (!zoomRange) return;
+                      
+                      const windowSize = zoomRange.end - zoomRange.start + 1;
+                      const newEnd = alignedSeq1.length - 1;
+                      const newStart = Math.max(0, newEnd - windowSize + 1);
+                      
+                      handleZoomChange(newStart, newEnd);
+                    }}
+                    disabled={zoomRange?.end === alignedSeq1.length - 1}
+                    className={`px-3 py-1 text-xs rounded ${zoomRange?.end === alignedSeq1.length - 1 ? 'bg-gray-800 opacity-50 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
+                    title="Go to end"
+                  >
+                    <span className="flex items-center">
+                      End
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
+            
             {/* Similarity Profile */}
             <div className="bg-gray-900 rounded-lg p-4 md:col-span-2">
               <h3 className="text-md font-semibold mb-3">Similarity Profile</h3>
@@ -2003,7 +2005,7 @@ function InfoPageContent() {
                       key={i}
                       cx={d.position - 1}
                       cy={1 - (d.similarity + 1) / 2}
-                      r="0.02"
+                      r="0.03"
                       fill={
                         d.similarity === 1 ? 'rgb(34, 197, 94)' : 
                         d.similarity === 0 ? 'rgb(234, 179, 8)' : 
@@ -2132,16 +2134,16 @@ function InfoPageContent() {
               </div>
               <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-gray-400 mt-4">
                 <div className="flex items-center">
-                  <span className="font-semibold text-green-500">Conservado:</span>
-                  <span className="ml-1">sequências similares, provável importância funcional</span>
+                  <span className="font-semibold text-green-500">Conserved:</span>
+                  <span className="ml-1">similar sequences, likely functional importance</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="font-semibold text-yellow-500">Variável:</span>
-                  <span className="ml-1">regiões com variabilidade moderada</span>
+                  <span className="font-semibold text-yellow-500">Variable:</span>
+                  <span className="ml-1">regions with moderate variability</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="font-semibold text-red-500">Divergente:</span>
-                  <span className="ml-1">regiões com alta diferenciação ou gaps</span>
+                  <span className="font-semibold text-red-500">Divergent:</span>
+                  <span className="ml-1">regions with high differentiation or gaps</span>
                 </div>
               </div>
             </div>
@@ -2387,7 +2389,7 @@ function InfoPageContent() {
                     </p>
                   </div>
                 )}
-                {alignmentViewMode === 'comparative' && (
+                {/* {alignmentViewMode === 'comparative' && (
                   <div className="bg-gray-700/50 rounded-lg p-3 mb-4 text-sm">
                     <p className="text-gray-300">
                       This view provides analytical charts to better understand the alignment characteristics.
@@ -2395,7 +2397,7 @@ function InfoPageContent() {
                       conservation regions to help identify patterns and features in the alignment.
                     </p>
                   </div>
-                )}
+                )} */}
                 {renderAlignment()}
               </div>
 
