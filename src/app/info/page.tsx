@@ -2278,7 +2278,7 @@ function InfoPageContent() {
                 </div>
                 <div className="bg-gray-800 rounded-lg p-4 md:p-5 overflow-auto">
                   <p className="mb-4 text-gray-400 text-sm md:text-base">
-                    A matriz de pontuação mostra os valores calculados durante a execução do algoritmo.
+                  The score matrix shows the values ​​calculated during the execution of the algorithm.
                     {matrixViewMode === 'standard' && (
                       <>
                         The colors indicate the type of operation: <span className="text-green-400">match</span>, 
