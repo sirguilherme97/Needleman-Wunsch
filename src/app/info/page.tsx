@@ -766,7 +766,7 @@ function InfoPageContent() {
                   setIsMatrixCollapsed(true);
                 }
               }}
-              className="px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 flex items-center gap-1"
+              className={`px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 flex items-center gap-1 ${isMatrixCollapsed ? "" : "animate-pulse"}`}
             >
               <span>{isMatrixCollapsed ? "Expand Matrix" : "Collapse Matrix"}</span>
               <span>{isMatrixCollapsed ? "↔" : "↕"}</span>
@@ -785,12 +785,15 @@ function InfoPageContent() {
             {scoreMatrix.length > chunkSize && (
               <button
                 onClick={toggleChunking}
-                className={`px-3 py-1 text-xs rounded ${renderingChunks ? 'bg-cyan-600' : 'bg-gray-700'} hover:bg-gray-600 flex items-center gap-1`}
+                className={`px-3 py-1 text-xs rounded ${renderingChunks ? 'bg-cyan-600 animate-pulse' : 'bg-gray-700'} hover:bg-gray-600 flex items-center gap-1`}
                 title={renderingChunks ? "Carregando em partes para evitar travamentos" : "Carregar matriz inteira de uma vez"}
               >
                 <span>{renderingChunks ? "Progressive Loading" : "Load All"}</span>
                 {renderingChunks && <span className="text-xs">({renderedChunks.length * chunkSize}/{scoreMatrix.length})</span>}
               </button>
+            )}
+            {(!isMatrixCollapsed || renderingChunks) && (
+              <span className='text-xs text-gray-400'>* I recommend using Collapsed and Progressive Loading</span>
             )}
           </div>
 
@@ -1637,7 +1640,7 @@ function InfoPageContent() {
             <div className="bg-gray-900 rounded-lg p-4">
               <h3 className="text-md font-semibold mb-3">Alignment Composition</h3>
               <div className="relative h-32 w-full">
-                <div className="absolute inset-0 flex">
+                <div className="absolute inset-0 flex flex-col">
                   {/* Match section */}
                   <div
                     className="h-full bg-green-500 flex items-center justify-center text-xs md:text-sm font-medium"
@@ -1676,12 +1679,180 @@ function InfoPageContent() {
                 </div>
               </div>
 
-              <div className="flex justify-between mt-2 text-xs text-gray-400">
-                <div>0</div>
-                <div>{Math.round(totalPositions / 4)}</div>
-                <div>{Math.round(totalPositions / 2)}</div>
-                <div>{Math.round(3 * totalPositions / 4)}</div>
-                <div>{totalPositions}</div>
+              {/* Adicionando informações sobre regiões */}
+              <div className="mt-4 grid grid-cols-1 gap-2 ">
+                {/* Análise de regiões */}
+                <div className="flex flex-col">
+                  <h4 className="text-md font-semibold mb-3 mt-5">Regions of interest:</h4>
+
+                  {/* Melhores e piores regiões */}
+                  <div className="flex flex-col rounded-md p-2 text-xs space-y-2">
+                    {/* Melhores regiões - maior concentração de matches */}
+                    {(() => {
+                      // Encontrar região com maior concentração de matches
+                      const windowSize = Math.min(10, alignedSeq1.length);
+                      let bestRegionStart = 0;
+                      let bestRegionMatchCount = 0;
+
+                      // Buscar a melhor região
+                      for (let i = 0; i <= alignedSeq1.length - windowSize; i++) {
+                        let matchCount = 0;
+                        for (let j = i; j < i + windowSize; j++) {
+                          if (alignedSeq1[j] === alignedSeq2[j] && alignedSeq1[j] !== '-') {
+                            matchCount++;
+                          }
+                        }
+
+                        if (matchCount > bestRegionMatchCount) {
+                          bestRegionMatchCount = matchCount;
+                          bestRegionStart = i;
+                        }
+                      }
+
+                      // Calcular porcentagem de matches na melhor região
+                      const bestRegionMatchPercentage = Math.round((bestRegionMatchCount / windowSize) * 100);
+
+                      return (
+                        <div className="flex flex-col">
+                          <span className="text-green-400 font-medium">Best region (matches):</span>
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-shrink-0 w-20 text-gray-400">Position</div>
+                            <div>{bestRegionStart + 1}-{bestRegionStart + windowSize}</div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-shrink-0 w-20 text-gray-400">Matches:</div>
+                            <div>{bestRegionMatchCount} ({bestRegionMatchPercentage}%)</div>
+                          </div>
+                          <div className="flex mt-1 overflow-hidden rounded-sm">
+                            {alignedSeq1.slice(bestRegionStart, bestRegionStart + windowSize).map((char, idx) => (
+                              <span
+                                key={idx}
+                                className={`w-4 h-4 flex items-center justify-center text-[9px] ${char === alignedSeq2[bestRegionStart + idx] && char !== '-'
+                                  ? "bg-green-500"
+                                  : char === '-' || alignedSeq2[bestRegionStart + idx] === '-'
+                                    ? "bg-red-500"
+                                    : "bg-yellow-500"
+                                  }`}
+                              >
+                                {char}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Piores regiões - maior concentração de gaps */}
+                    {(() => {
+                      // Encontrar região com maior concentração de gaps
+                      const windowSize = Math.min(10, alignedSeq1.length);
+                      let worstRegionStart = 0;
+                      let worstRegionGapCount = 0;
+
+                      // Buscar a pior região
+                      for (let i = 0; i <= alignedSeq1.length - windowSize; i++) {
+                        let gapCount = 0;
+                        for (let j = i; j < i + windowSize; j++) {
+                          if (alignedSeq1[j] === '-' || alignedSeq2[j] === '-') {
+                            gapCount++;
+                          }
+                        }
+
+                        if (gapCount > worstRegionGapCount) {
+                          worstRegionGapCount = gapCount;
+                          worstRegionStart = i;
+                        }
+                      }
+
+                      // Calcular porcentagem de gaps na pior região
+                      const worstRegionGapPercentage = Math.round((worstRegionGapCount / windowSize) * 100);
+
+                      return (
+                        <div className="flex flex-col mt-2">
+                          <span className="text-red-400 font-medium">Worst region (gaps):</span>
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-shrink-0 w-20 text-gray-400">Position</div>
+                            <div>{worstRegionStart + 1}-{worstRegionStart + windowSize}</div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-shrink-0 w-20 text-gray-400">Gaps:</div>
+                            <div>{worstRegionGapCount} ({worstRegionGapPercentage}%)</div>
+                          </div>
+                          <div className="flex mt-1 overflow-hidden rounded-sm">
+                            {alignedSeq1.slice(worstRegionStart, worstRegionStart + windowSize).map((char, idx) => (
+                              <span
+                                key={idx}
+                                className={`w-4 h-4 flex items-center justify-center text-[9px] ${char === alignedSeq2[worstRegionStart + idx] && char !== '-'
+                                  ? "bg-green-500"
+                                  : char === '-' || alignedSeq2[worstRegionStart + idx] === '-'
+                                    ? "bg-red-500"
+                                    : "bg-yellow-500"
+                                  }`}
+                              >
+                                {char}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Região com mais mismatches */}
+                    {(() => {
+                      // Encontrar região com maior concentração de mismatches
+                      const windowSize = Math.min(10, alignedSeq1.length);
+                      let mismatchRegionStart = 0;
+                      let mismatchRegionCount = 0;
+
+                      // Buscar região com mais mismatches
+                      for (let i = 0; i <= alignedSeq1.length - windowSize; i++) {
+                        let mismatchCount = 0;
+                        for (let j = i; j < i + windowSize; j++) {
+                          if (alignedSeq1[j] !== alignedSeq2[j] && alignedSeq1[j] !== '-' && alignedSeq2[j] !== '-') {
+                            mismatchCount++;
+                          }
+                        }
+
+                        if (mismatchCount > mismatchRegionCount) {
+                          mismatchRegionCount = mismatchCount;
+                          mismatchRegionStart = i;
+                        }
+                      }
+
+                      // Calcular porcentagem de mismatches na região
+                      const mismatchPercentage = Math.round((mismatchRegionCount / windowSize) * 100);
+
+                      return (
+                        <div className="flex flex-col mt-2">
+                          <span className="text-yellow-400 font-medium">Region with most mismatches:</span>
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-shrink-0 w-20 text-gray-400">Position</div>
+                            <div>{mismatchRegionStart + 1}-{mismatchRegionStart + windowSize}</div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-shrink-0 w-20 text-gray-400">Mismatches:</div>
+                            <div>{mismatchRegionCount} ({mismatchPercentage}%)</div>
+                          </div>
+                          <div className="flex mt-1 overflow-hidden rounded-sm">
+                            {alignedSeq1.slice(mismatchRegionStart, mismatchRegionStart + windowSize).map((char, idx) => (
+                              <span
+                                key={idx}
+                                className={`w-4 h-4 flex items-center justify-center text-[9px] ${char === alignedSeq2[mismatchRegionStart + idx] && char !== '-'
+                                  ? "bg-green-500"
+                                  : char === '-' || alignedSeq2[mismatchRegionStart + idx] === '-'
+                                    ? "bg-red-500"
+                                    : "bg-yellow-500"
+                                  }`}
+                              >
+                                {char}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -2459,7 +2630,7 @@ export default function InfoPage() {
     <Suspense fallback={
       <div className="w-full flex min-h-screen flex-col items-center justify-center bg-gradient-to-l from-cyan-950 to-black">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-cyan-500 mb-4"></div>
-        <p className="text-cyan-400 text-lg">Carregando...</p>
+        <p className="text-cyan-400 text-lg">Loading...</p>
       </div>
     }>
       <InfoPageContent />
