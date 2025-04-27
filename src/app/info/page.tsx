@@ -854,8 +854,8 @@ function InfoPageContent() {
         )}
 
         {/* Controles de visualização da tabela */}
-        <div className="flex justify-between items-center mb-0 bg-gray-800 p-2 rounded">
-          <div className="flex gap-3">
+        <div className="flex flex-col justify-center items-start mb-0 bg-gray-800 p-2 rounded">
+          <div className="flex gap-3 flex-wrap items-center">
             <button
               onClick={() => {
                 if (isMatrixCollapsed) {
@@ -913,7 +913,7 @@ function InfoPageContent() {
           </div>
 
           {isMatrixCollapsed && (
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-gray-400 mt-4">
               Showing {collapsedRange.size} rows/cols of {scoreMatrix.length} total
             </div>
           )}
@@ -930,7 +930,7 @@ function InfoPageContent() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-2">
                   <span className="text-xs">Start:</span>
                   <input
