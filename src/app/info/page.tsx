@@ -29,23 +29,24 @@ function InfoPageContent() {
   const [progressStatus, setProgressStatus] = useState("Initializing...")
   const [matrixViewMode, setMatrixViewMode] = useState<'standard' | 'heatmap' | 'arrows' | 'colorful' | 'gradient' | 'highlight'>('standard')
   const [showDifferenceHighlight, setShowDifferenceHighlight] = useState(false)
+  const [showSubtitles, setShowSubtitles] = useState(false)
   const [alignmentViewMode, setAlignmentViewMode] = useState<'blocks' | 'linear' | 'detailed' | 'compact' | 'interactive' | 'comparative'>('blocks')
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [hoverIntentTimeout, setHoverIntentTimeout] = useState<NodeJS.Timeout | null>(null)
-  const [selectedCell, setSelectedCell] = useState<{i: number, j: number} | null>(null)
+  const [selectedCell, setSelectedCell] = useState<{ i: number, j: number } | null>(null)
   const [highlightMode, setHighlightMode] = useState<'selected' | 'path' | 'maximum' | 'minimum' | 'custom' | 'diagonal' | 'above' | 'below' | 'pattern'>('selected')
   const [highlightAlignmentIndices, setHighlightAlignmentIndices] = useState<number[]>([])
   const [thresholdValue, setThresholdValue] = useState<number>(0)
   const [patternType, setPatternType] = useState<'matches' | 'mismatches' | 'gaps' | 'positive' | 'negative'>('matches')
   const [isMatrixCollapsed, setIsMatrixCollapsed] = useState(false)
-  const [collapsedRange, setCollapsedRange] = useState<{start: number, end: number, size: number}>({start: 0, end: 0, size: 10})
+  const [collapsedRange, setCollapsedRange] = useState<{ start: number, end: number, size: number }>({ start: 0, end: 0, size: 10 })
   const [showRangeSelector, setShowRangeSelector] = useState(false)
   const [renderingChunks, setRenderingChunks] = useState(true)
   const [chunkSize, setChunkSize] = useState(50)
   const [renderedChunks, setRenderedChunks] = useState<number[]>([0])
   const [isChunkLoading, setIsChunkLoading] = useState(false)
   // Novo estado para controlar o zoom no Similarity Profile e Alignment Regions
-  const [zoomRange, setZoomRange] = useState<{start: number, end: number} | null>(null)
+  const [zoomRange, setZoomRange] = useState<{ start: number, end: number } | null>(null)
 
   useEffect(() => {
     // Retrieve parameters from URL
@@ -73,13 +74,13 @@ function InfoPageContent() {
     if (seq1Param && seq2Param) {
       setIsLoading(true)
       setProgressStatus("Initializing calculations...")
-      
+
       // Use setTimeout to avoid blocking the interface
       setTimeout(() => {
         try {
           setProgressStatus("Calculating score matrix...")
           const result = needlemanWunsch(seq1Param, seq2Param, matchScoreParam, gapPenaltyParam, mismatchPenaltyParam)
-          
+
           setProgressStatus("Processing results...")
           setScoreMatrix(result.scoreMatrix)
           setTracebackMatrix(result.tracebackMatrix)
@@ -91,7 +92,7 @@ function InfoPageContent() {
           // Calculate statistics
           const stats = calculateStatistics(result.alignedSeq1, result.alignedSeq2)
           setStatistics(stats)
-          
+
           setProgressStatus("Completed!")
           setIsLoading(false)
         } catch (error) {
@@ -121,9 +122,9 @@ function InfoPageContent() {
       // Todos os chunks já foram renderizados
       return;
     }
-    
+
     setIsChunkLoading(true);
-    
+
     // Usar setTimeout para não bloquear a UI
     setTimeout(() => {
       const nextChunkIndex = renderedChunks.length;
@@ -135,11 +136,11 @@ function InfoPageContent() {
   // Função para verificar se é necessário carregar mais chunks conforme o scroll
   const handleTableScroll = (event: React.UIEvent<HTMLDivElement>) => {
     if (!renderingChunks || isChunkLoading) return;
-    
+
     const target = event.target as HTMLDivElement;
     const scrollBottom = target.scrollTop + target.clientHeight;
     const scrollThreshold = target.scrollHeight * 0.8; // Carregar próximo chunk quando chegar a 80% do scroll
-    
+
     if (scrollBottom >= scrollThreshold) {
       loadNextChunk();
     }
@@ -148,7 +149,7 @@ function InfoPageContent() {
   // Função para determinar quais linhas devem ser renderizadas
   const shouldRenderRow = (rowIndex: number) => {
     if (!renderingChunks) return true;
-    
+
     const chunkIndex = Math.floor(rowIndex / chunkSize);
     return renderedChunks.includes(chunkIndex);
   };
@@ -196,7 +197,7 @@ function InfoPageContent() {
       scoreMatrix[i][0] = scoreMatrix[i - 1][0] + gapPenalty
       tracebackMatrix[i][0] = "U"
     }
-    
+
     // Initialize the first row
     for (let j = 1; j <= n; ++j) {
       scoreMatrix[0][j] = scoreMatrix[0][j - 1] + gapPenalty
@@ -246,9 +247,9 @@ function InfoPageContent() {
       }
     }
 
-    return { 
-      alignedSeq1, 
-      alignedSeq2, 
+    return {
+      alignedSeq1,
+      alignedSeq2,
       finalScore: scoreMatrix[m][n],
       scoreMatrix,
       tracebackMatrix
@@ -260,7 +261,7 @@ function InfoPageContent() {
     let matches = 0
     let mismatches = 0
     let gaps = 0
-    
+
     for (let i = 0; i < seq1.length; i++) {
       if (seq1[i] === '-' || seq2[i] === '-') {
         gaps++
@@ -289,29 +290,29 @@ function InfoPageContent() {
     if (hoverIntentTimeout) {
       clearTimeout(hoverIntentTimeout);
     }
-    
+
     // Definir novo timeout para atualizar o índice hover
     const timeout = setTimeout(() => {
       setHoveredIndex(index);
     }, 50); // pequeno delay para evitar flickering
-    
+
     setHoverIntentTimeout(timeout);
   };
-  
+
   const handleHoverLeave = () => {
     // Cancelar qualquer timeout anterior
     if (hoverIntentTimeout) {
       clearTimeout(hoverIntentTimeout);
     }
-    
+
     // Definir novo timeout para limpar o hover
     const timeout = setTimeout(() => {
       setHoveredIndex(null);
     }, 50);
-    
+
     setHoverIntentTimeout(timeout);
   };
-  
+
   // Limpar timeout ao desmontar
   useEffect(() => {
     return () => {
@@ -323,8 +324,8 @@ function InfoPageContent() {
 
   // Função para lidar com o clique na célula
   const handleCellClick = (i: number, j: number) => {
-    setSelectedCell({i, j});
-    
+    setSelectedCell({ i, j });
+
     // Calcular os índices do alinhamento correspondentes a esta célula
     if (i > 0 && j > 0) {
       calculateAlignmentIndicesFromCell(i, j);
@@ -338,12 +339,12 @@ function InfoPageContent() {
     // Reconstruir o caminho de traceback da célula até a origem
     let currentI = i;
     let currentJ = j;
-    const path: {i: number, j: number}[] = [{i: currentI, j: currentJ}];
-    
+    const path: { i: number, j: number }[] = [{ i: currentI, j: currentJ }];
+
     // Seguir o caminho de traceback até alcançar a origem
     while (currentI > 0 || currentJ > 0) {
       const direction = tracebackMatrix[currentI][currentJ];
-      
+
       if (direction === 'D' && currentI > 0 && currentJ > 0) {
         currentI--;
         currentJ--;
@@ -354,31 +355,31 @@ function InfoPageContent() {
       } else {
         break;
       }
-      
-      path.push({i: currentI, j: currentJ});
+
+      path.push({ i: currentI, j: currentJ });
     }
-    
+
     // Mapear o caminho para os índices correspondentes no alinhamento
     // Começamos do fim do alinhamento e recuamos
     let alignmentIndex = alignedSeq1.length - 1;
     let matrixI = scoreMatrix.length - 1;
     let matrixJ = scoreMatrix[0].length - 1;
     const indices: number[] = [];
-    
+
     // Mapeia a posição final da matriz (canto inferior direito) para o fim do alinhamento
     if (matrixI === i && matrixJ === j) {
       indices.push(alignmentIndex);
     }
-    
+
     // Traceback completo do alinhamento para encontrar correspondências
     while (matrixI > 0 || matrixJ > 0) {
       const direction = tracebackMatrix[matrixI][matrixJ];
-      
+
       // Verificar se esta célula da matriz está no caminho que estamos procurando
       if (path.some(cell => cell.i === matrixI && cell.j === matrixJ)) {
         indices.push(alignmentIndex);
       }
-      
+
       // Mover para a próxima posição conforme o traceback
       if (direction === 'D' && matrixI > 0 && matrixJ > 0) {
         matrixI--;
@@ -394,7 +395,7 @@ function InfoPageContent() {
         break;
       }
     }
-    
+
     setHighlightAlignmentIndices(indices);
   };
 
@@ -405,24 +406,24 @@ function InfoPageContent() {
     // Cálculo do valor mínimo e máximo para o heatmap
     let minValue = Infinity;
     let maxValue = -Infinity;
-    let maxPositions: {i: number, j: number}[] = [];
-    let minPositions: {i: number, j: number}[] = [];
-    
+    let maxPositions: { i: number, j: number }[] = [];
+    let minPositions: { i: number, j: number }[] = [];
+
     if (matrixViewMode === 'heatmap' || matrixViewMode === 'colorful' || matrixViewMode === 'gradient' || matrixViewMode === 'highlight') {
       scoreMatrix.forEach((row, i) => {
         row.forEach((score, j) => {
           if (score < minValue) {
             minValue = score;
-            minPositions = [{i, j}];
+            minPositions = [{ i, j }];
           } else if (score === minValue) {
-            minPositions.push({i, j});
+            minPositions.push({ i, j });
           }
-          
+
           if (score > maxValue) {
             maxValue = score;
-            maxPositions = [{i, j}];
+            maxPositions = [{ i, j }];
           } else if (score === maxValue) {
-            maxPositions.push({i, j});
+            maxPositions.push({ i, j });
           }
         });
       });
@@ -432,29 +433,29 @@ function InfoPageContent() {
     const getHeatMapColor = (value: number) => {
       // Normaliza o valor entre 0 e 1
       const normalized = (value - minValue) / (maxValue - minValue || 1);
-      
+
       // Esquema de cor de azul para vermelho
       const r = Math.floor(normalized * 255);
       const b = Math.floor((1 - normalized) * 255);
-      
+
       return `rgb(${r}, 0, ${b})`;
     };
-    
+
     // Função para gerar cores vibrantes para o modo colorful
     const getColorfulColor = (value: number) => {
       // Normaliza o valor entre 0 e 1
       const normalized = (value - minValue) / (maxValue - minValue || 1);
-      
+
       // Criar um esquema de cores do arco-íris
       const hue = normalized * 270; // 0 a 270 graus do círculo de cores (azul a vermelho)
       return `hsl(${hue}, 100%, 50%)`;
     };
-    
+
     // Função para gerar gradiente para o modo gradiente
     const getGradientColor = (value: number) => {
       // Normaliza o valor entre 0 e 1
       const normalized = (value - minValue) / (maxValue - minValue || 1);
-      
+
       // Verde para valores positivos, vermelho para negativos, tom baseado na magnitude
       if (value > 0) {
         // Verde com intensidade baseada no valor
@@ -469,20 +470,20 @@ function InfoPageContent() {
         return 'rgb(90, 90, 90)';
       }
     };
-    
+
     // Função para verificar se uma célula está em uma trajetória de alinhamento
     const isCellInPath = (i: number, j: number): boolean => {
       if (!selectedCell) return false;
-      
+
       // Iniciar da célula selecionada e seguir o caminho de traceback
       let currentI = selectedCell.i;
       let currentJ = selectedCell.j;
-      const path: {i: number, j: number}[] = [{i: currentI, j: currentJ}];
-      
+      const path: { i: number, j: number }[] = [{ i: currentI, j: currentJ }];
+
       // Seguir o caminho de traceback até alcançar a origem ou a borda
       while (currentI > 0 || currentJ > 0) {
         const direction = tracebackMatrix[currentI][currentJ];
-        
+
         if (direction === 'D' && currentI > 0 && currentJ > 0) {
           currentI--;
           currentJ--;
@@ -493,113 +494,113 @@ function InfoPageContent() {
         } else {
           break; // Em caso de problema com o traceback
         }
-        
-        path.push({i: currentI, j: currentJ});
+
+        path.push({ i: currentI, j: currentJ });
       }
-      
+
       return path.some(cell => cell.i === i && cell.j === j);
     };
-    
+
     // Função para identificar se uma célula deve ser destacada
     const shouldHighlightCell = (i: number, j: number): boolean => {
       if (matrixViewMode !== 'highlight') return false;
-      
+
       if (highlightMode === 'selected' && selectedCell && i === selectedCell.i && j === selectedCell.j) {
         return true;
       }
-      
+
       if (highlightMode === 'path' && isCellInPath(i, j)) {
         return true;
       }
-      
+
       if (highlightMode === 'maximum') {
         return maxPositions.some(pos => pos.i === i && pos.j === j);
       }
-      
+
       if (highlightMode === 'minimum') {
         return minPositions.some(pos => pos.i === i && pos.j === j);
       }
-      
+
       if (highlightMode === 'custom' && scoreMatrix[i][j] === (selectedCell ? scoreMatrix[selectedCell.i][selectedCell.j] : null)) {
         return true;
       }
-      
+
       if (highlightMode === 'diagonal' && i === j) {
         return true;
       }
-      
+
       if (highlightMode === 'above' && scoreMatrix[i][j] > thresholdValue) {
         return true;
       }
-      
+
       if (highlightMode === 'below' && scoreMatrix[i][j] < thresholdValue) {
         return true;
       }
-      
+
       if (highlightMode === 'pattern') {
         // Verificar padrões específicos
         if (i === 0 || j === 0) return false; // Ignorar bordas
-        
-        if (patternType === 'matches' && i > 0 && j > 0 && seq1[i-1] === seq2[j-1]) {
+
+        if (patternType === 'matches' && i > 0 && j > 0 && seq1[i - 1] === seq2[j - 1]) {
           return true;
         }
-        
-        if (patternType === 'mismatches' && i > 0 && j > 0 && seq1[i-1] !== seq2[j-1] && seq1[i-1] !== '-' && seq2[j-1] !== '-') {
+
+        if (patternType === 'mismatches' && i > 0 && j > 0 && seq1[i - 1] !== seq2[j - 1] && seq1[i - 1] !== '-' && seq2[j - 1] !== '-') {
           return true;
         }
-        
+
         if (patternType === 'gaps') {
           // Verificar se esta célula corresponde a um gap (movimentos verticais ou horizontais)
           const direction = tracebackMatrix[i][j];
           return direction === 'U' || direction === 'L';
         }
-        
+
         if (patternType === 'positive' && scoreMatrix[i][j] > 0) {
           return true;
         }
-        
+
         if (patternType === 'negative' && scoreMatrix[i][j] < 0) {
           return true;
         }
       }
-      
+
       return false;
     };
 
     return (
       <div className="overflow-x-auto mt-6">
         <div className="flex flex-wrap gap-4 mb-4">
-          <button 
+          <button
             onClick={() => setMatrixViewMode('standard')}
             className={`px-3 py-1 text-sm rounded ${matrixViewMode === 'standard' ? 'bg-cyan-600' : 'bg-gray-700'}`}
           >
             Standard
           </button>
-          <button 
+          <button
             onClick={() => setMatrixViewMode('heatmap')}
             className={`px-3 py-1 text-sm rounded ${matrixViewMode === 'heatmap' ? 'bg-cyan-600' : 'bg-gray-700'}`}
           >
             Heatmap
           </button>
-          <button 
+          <button
             onClick={() => setMatrixViewMode('arrows')}
             className={`px-3 py-1 text-sm rounded ${matrixViewMode === 'arrows' ? 'bg-cyan-600' : 'bg-gray-700'}`}
           >
             Traceback Arrows
           </button>
-          <button 
+          <button
             onClick={() => setMatrixViewMode('colorful')}
             className={`px-3 py-1 text-sm rounded ${matrixViewMode === 'colorful' ? 'bg-cyan-600' : 'bg-gray-700'}`}
           >
             Colorful
           </button>
-          <button 
+          <button
             onClick={() => setMatrixViewMode('gradient')}
             className={`px-3 py-1 text-sm rounded ${matrixViewMode === 'gradient' ? 'bg-cyan-600' : 'bg-gray-700'}`}
           >
             Gradient
           </button>
-          <button 
+          <button
             onClick={() => setMatrixViewMode('highlight')}
             className={`px-3 py-1 text-sm rounded ${matrixViewMode === 'highlight' ? 'bg-cyan-600' : 'bg-gray-700'}`}
           >
@@ -607,82 +608,91 @@ function InfoPageContent() {
           </button>
           <div className="flex items-center gap-2 ml-auto">
             <label className="flex items-center gap-2">
-              <input 
-                type="checkbox" 
-                checked={showDifferenceHighlight} 
+              <input
+                type="checkbox"
+                checked={showDifferenceHighlight}
                 onChange={() => setShowDifferenceHighlight(!showDifferenceHighlight)}
                 className="rounded text-cyan-600 focus:ring-cyan-500"
               />
               <span className="text-sm">Highlight Differences</span>
             </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={showSubtitles}
+                onChange={() => setShowSubtitles(!showSubtitles)}
+                className="rounded text-cyan-600 focus:ring-cyan-500"
+              />
+              <span className="text-sm">Show Subtitles</span>
+            </label>
           </div>
         </div>
-        
+
         {matrixViewMode === 'highlight' && (
           <div className="flex flex-wrap gap-4 mb-4 bg-gray-800 p-3 rounded-lg">
-            <button 
+            <button
               onClick={() => setHighlightMode('selected')}
               className={`px-3 py-1 text-xs rounded ${highlightMode === 'selected' ? 'bg-cyan-600' : 'bg-gray-700'}`}
             >
               Selected Cell
             </button>
-            <button 
+            <button
               onClick={() => setHighlightMode('path')}
               className={`px-3 py-1 text-xs rounded ${highlightMode === 'path' ? 'bg-cyan-600' : 'bg-gray-700'}`}
             >
               Traceback Path
             </button>
-            <button 
+            <button
               onClick={() => setHighlightMode('maximum')}
               className={`px-3 py-1 text-xs rounded ${highlightMode === 'maximum' ? 'bg-cyan-600' : 'bg-gray-700'}`}
             >
               Maximum Values ({maxValue})
             </button>
-            <button 
+            <button
               onClick={() => setHighlightMode('minimum')}
               className={`px-3 py-1 text-xs rounded ${highlightMode === 'minimum' ? 'bg-cyan-600' : 'bg-gray-700'}`}
             >
               Minimum Values ({minValue})
             </button>
-            <button 
+            <button
               onClick={() => setHighlightMode('custom')}
               className={`px-3 py-1 text-xs rounded ${highlightMode === 'custom' ? 'bg-cyan-600' : 'bg-gray-700'}`}
             >
               Same Values
             </button>
-            <button 
+            <button
               onClick={() => setHighlightMode('diagonal')}
               className={`px-3 py-1 text-xs rounded ${highlightMode === 'diagonal' ? 'bg-cyan-600' : 'bg-gray-700'}`}
             >
               Diagonal
             </button>
-            <button 
+            <button
               onClick={() => setHighlightMode('above')}
               className={`px-3 py-1 text-xs rounded ${highlightMode === 'above' ? 'bg-cyan-600' : 'bg-gray-700'}`}
             >
               Above Threshold
             </button>
-            <button 
+            <button
               onClick={() => setHighlightMode('below')}
               className={`px-3 py-1 text-xs rounded ${highlightMode === 'below' ? 'bg-cyan-600' : 'bg-gray-700'}`}
             >
               Below Threshold
             </button>
-            <button 
+            <button
               onClick={() => setHighlightMode('pattern')}
               className={`px-3 py-1 text-xs rounded ${highlightMode === 'pattern' ? 'bg-cyan-600' : 'bg-gray-700'}`}
             >
               Patterns
             </button>
-            
+
             {/* Controles adicionais que aparecem dependendo do modo selecionado */}
             {(highlightMode === 'above' || highlightMode === 'below') && (
               <div className="flex items-center gap-2 w-full mt-2">
                 <span className="text-xs">Threshold:</span>
-                <input 
-                  type="range" 
-                  min={minValue} 
-                  max={maxValue} 
+                <input
+                  type="range"
+                  min={minValue}
+                  max={maxValue}
                   value={thresholdValue}
                   onChange={(e) => setThresholdValue(Number(e.target.value))}
                   className="w-full"
@@ -690,7 +700,7 @@ function InfoPageContent() {
                 <span className="text-xs w-10 text-right">{thresholdValue}</span>
               </div>
             )}
-            
+
             {highlightMode === 'pattern' && (
               <div className="flex flex-wrap gap-2 w-full mt-2">
                 <button
@@ -727,7 +737,7 @@ function InfoPageContent() {
             )}
           </div>
         )}
-        
+
         {/* Controles de visualização da tabela */}
         <div className="flex justify-between items-center mb-2 bg-gray-800 p-2 rounded">
           <div className="flex gap-3">
@@ -761,7 +771,7 @@ function InfoPageContent() {
               <span>{isMatrixCollapsed ? "Expand Matrix" : "Collapse Matrix"}</span>
               <span>{isMatrixCollapsed ? "↔" : "↕"}</span>
             </button>
-            
+
             {isMatrixCollapsed && (
               <button
                 onClick={() => setShowRangeSelector(!showRangeSelector)}
@@ -770,7 +780,7 @@ function InfoPageContent() {
                 Configure Range
               </button>
             )}
-            
+
             {/* Botão para controlar a renderização em chunks */}
             {scoreMatrix.length > chunkSize && (
               <button
@@ -783,14 +793,14 @@ function InfoPageContent() {
               </button>
             )}
           </div>
-          
+
           {isMatrixCollapsed && (
             <div className="text-xs text-gray-400">
               Showing {collapsedRange.size} rows/cols of {scoreMatrix.length} total
             </div>
           )}
         </div>
-        
+
         {/* Seletor de intervalo */}
         {showRangeSelector && isMatrixCollapsed && (
           <div className="mb-4 bg-gray-800 p-3 rounded-lg">
@@ -801,7 +811,7 @@ function InfoPageContent() {
                   {collapsedRange.start}-{collapsedRange.end} (size: {collapsedRange.size})
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <span className="text-xs">Start:</span>
@@ -821,7 +831,7 @@ function InfoPageContent() {
                     className="w-16 bg-gray-700 border border-gray-600 rounded p-1 text-xs"
                   />
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <span className="text-xs">End:</span>
                   <input
@@ -840,7 +850,7 @@ function InfoPageContent() {
                     className="w-16 bg-gray-700 border border-gray-600 rounded p-1 text-xs"
                   />
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <span className="text-xs">Size:</span>
                   <select
@@ -849,10 +859,10 @@ function InfoPageContent() {
                       const newSize = Number(e.target.value);
                       const currentCenter = Math.floor((collapsedRange.start + collapsedRange.end) / 2);
                       const halfSize = Math.floor(newSize / 2);
-                      
+
                       let newStart = Math.max(0, currentCenter - halfSize);
                       let newEnd = Math.min(scoreMatrix.length - 1, currentCenter + halfSize);
-                      
+
                       // Ajustar para manter o tamanho solicitado, se possível
                       if (newEnd - newStart + 1 < newSize && newEnd < scoreMatrix.length - 1) {
                         newEnd = Math.min(scoreMatrix.length - 1, newStart + newSize - 1);
@@ -860,7 +870,7 @@ function InfoPageContent() {
                       if (newEnd - newStart + 1 < newSize && newStart > 0) {
                         newStart = Math.max(0, newEnd - newSize + 1);
                       }
-                      
+
                       setCollapsedRange({
                         start: newStart,
                         end: newEnd,
@@ -874,7 +884,7 @@ function InfoPageContent() {
                     ))}
                   </select>
                 </div>
-                
+
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
@@ -890,7 +900,7 @@ function InfoPageContent() {
                   >
                     Start
                   </button>
-                  
+
                   <button
                     onClick={() => {
                       // Mostrar meio da matriz
@@ -907,7 +917,7 @@ function InfoPageContent() {
                   >
                     Middle
                   </button>
-                  
+
                   <button
                     onClick={() => {
                       // Mostrar fim da matriz
@@ -922,7 +932,7 @@ function InfoPageContent() {
                   >
                     End
                   </button>
-                  
+
                   {selectedCell && (
                     <button
                       onClick={() => {
@@ -947,10 +957,10 @@ function InfoPageContent() {
             </div>
           </div>
         )}
-        
+
         <div className="overflow-x-auto mt-6">
           {/* ... existing controls ... */}
-          
+
           {/* Wrapper div com evento de scroll */}
           <div className="overflow-auto max-h-[70vh]" onScroll={handleTableScroll}>
             <table className="border-collapse text-center min-w-fit">
@@ -975,35 +985,35 @@ function InfoPageContent() {
                   if (isMatrixCollapsed && (i < collapsedRange.start || i > collapsedRange.end)) {
                     return null;
                   }
-                  
+
                   // Com renderização em chunks, só mostrar as linhas dos chunks já renderizados
                   if (!shouldRenderRow(i)) {
                     return null;
                   }
-                  
+
                   return (
                     <tr key={i}>
                       <th className="border border-gray-600 p-2 bg-gray-800 sticky left-0 z-5">
-                        {i === 0 ? '' : seq1[i-1]}
+                        {i === 0 ? '' : seq1[i - 1]}
                       </th>
                       {row.map((score, j) => {
                         // No modo colapsado, só mostrar as colunas no intervalo definido
                         if (isMatrixCollapsed && (j < collapsedRange.start || j > collapsedRange.end)) {
                           return null;
                         }
-                        
+
                         // Determinar a direção do traceback
                         const direction = tracebackMatrix[i][j];
-                        
+
                         // Determinar a cor de fundo com base no modo de visualização
                         let bgColor = 'bg-gray-700';
                         let arrowSymbol = '';
                         let diffStyle: React.CSSProperties = {};
-                        
+
                         if (matrixViewMode === 'standard') {
                           if (i > 0 && j > 0) {
                             if (direction === 'D') {
-                              bgColor = seq1[i-1] === seq2[j-1] ? 'bg-green-700' : 'bg-yellow-700';
+                              bgColor = seq1[i - 1] === seq2[j - 1] ? 'bg-green-700' : 'bg-yellow-700';
                             } else if (direction === 'U' || direction === 'L') {
                               bgColor = 'bg-red-700';
                             }
@@ -1032,7 +1042,7 @@ function InfoPageContent() {
                         } else if (matrixViewMode === 'highlight') {
                           // Modo de destaque
                           if (shouldHighlightCell(i, j)) {
-                            diffStyle = { 
+                            diffStyle = {
                               backgroundColor: 'rgba(14, 165, 233, 0.6)',
                               boxShadow: '0 0 5px rgba(14, 165, 233, 0.8) inset'
                             };
@@ -1046,62 +1056,62 @@ function InfoPageContent() {
                             boxShadow: '0 0 0 2px white inset'
                           };
                         }
-                        
+
                         // Destacar diferenças entre células adjacentes
                         let diffHighlight = null;
                         if (showDifferenceHighlight && i > 0 && j > 0) {
-                          const diagonal = scoreMatrix[i-1][j-1];
-                          const up = scoreMatrix[i-1][j];
-                          const left = scoreMatrix[i][j-1];
-                          
+                          const diagonal = scoreMatrix[i - 1][j - 1];
+                          const up = scoreMatrix[i - 1][j];
+                          const left = scoreMatrix[i][j - 1];
+
                           const diagonalDiff = score - diagonal;
                           const upDiff = score - up;
                           const leftDiff = score - left;
-                          
+
                           diffHighlight = (
                             <div className="absolute text-[9px] flex flex-col opacity-70">
-                              <span className={`${diagonalDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '-12px', left: '-12px'}}>
+                              <span className={`${diagonalDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{ position: 'absolute', top: '-12px', left: '-12px' }}>
                                 {diagonalDiff > 0 ? '+' : ''}{diagonalDiff}
                               </span>
-                              <span className={`${upDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '-12px', left: '5px'}}>
+                              <span className={`${upDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{ position: 'absolute', top: '-12px', left: '5px' }}>
                                 {upDiff > 0 ? '+' : ''}{upDiff}
                               </span>
-                              <span className={`${leftDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{position: 'absolute', top: '5px', left: '-12px'}}>
+                              <span className={`${leftDiff > 0 ? 'text-green-400' : 'text-red-400'}`} style={{ position: 'absolute', top: '5px', left: '-12px' }}>
                                 {leftDiff > 0 ? '+' : ''}{leftDiff}
                               </span>
                             </div>
                           );
                         }
-                      
-                      return (
-                          <td 
-                            key={j} 
+
+                        return (
+                          <td
+                            key={j}
                             className={`border border-gray-600 p-2 ${bgColor} w-10 h-10 relative cursor-pointer hover:opacity-80 transition-opacity`}
                             style={diffStyle}
                             onClick={() => handleCellClick(i, j)}
                           >
-                          <div>{score}</div>
+                            <div>{score}</div>
                             {matrixViewMode === 'arrows' && (
                               <div className="text-xl absolute inset-0 flex items-center justify-center text-cyan-300">
                                 {arrowSymbol}
                               </div>
                             )}
                             {matrixViewMode !== 'arrows' && (
-                          <div className="absolute bottom-0 right-0 text-xs opacity-70">
-                            {direction}
-                          </div>
+                              <div className="absolute bottom-0 right-0 text-xs opacity-70">
+                                {direction}
+                              </div>
                             )}
                             {showDifferenceHighlight && diffHighlight}
-                        </td>
+                          </td>
                         );
-                    })}
-                  </tr>
+                      })}
+                    </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-          
+
           {/* Indicador de carregamento para próximos chunks */}
           {renderingChunks && renderedChunks.length * chunkSize < scoreMatrix.length && (
             <div className="mt-4 text-center text-sm flex items-center justify-center gap-2">
@@ -1109,20 +1119,20 @@ function InfoPageContent() {
               <span>Scroll down to load more rows ({renderedChunks.length * chunkSize}/{scoreMatrix.length})</span>
             </div>
           )}
-          
+
           {isMatrixCollapsed && (
             <div className="mt-2 text-center text-sm text-gray-400">
               <p>Matrix is collapsed. Showing rows/columns {collapsedRange.start}-{collapsedRange.end} of {scoreMatrix.length}.</p>
-        </div>
+            </div>
           )}
-          
+
           {selectedCell && (
             <div className="mt-4 bg-gray-800 p-3 rounded-lg text-sm">
               <h4 className="font-semibold mb-1">Célula Selecionada:</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <div>
                   <span className="text-gray-400">Posição:</span> {selectedCell.i}×{selectedCell.j}
-        </div>
+                </div>
                 <div>
                   <span className="text-gray-400">Valor:</span> {scoreMatrix[selectedCell.i][selectedCell.j]}
                 </div>
@@ -1130,13 +1140,13 @@ function InfoPageContent() {
                   <span className="text-gray-400">Direção:</span> {tracebackMatrix[selectedCell.i][selectedCell.j]}
                 </div>
                 <div>
-                  <span className="text-gray-400">Caracteres:</span> {selectedCell.i > 0 ? seq1[selectedCell.i-1] : '-'}×{selectedCell.j > 0 ? seq2[selectedCell.j-1] : '-'}
+                  <span className="text-gray-400">Caracteres:</span> {selectedCell.i > 0 ? seq1[selectedCell.i - 1] : '-'}×{selectedCell.j > 0 ? seq2[selectedCell.j - 1] : '-'}
                 </div>
               </div>
               {highlightAlignmentIndices.length > 0 && (
                 <div className="mt-2 pt-2 border-t border-gray-700">
                   <span className="text-gray-400">Posições destacadas no alinhamento:</span> {highlightAlignmentIndices.length}
-                  <button 
+                  <button
                     onClick={() => setHighlightAlignmentIndices([])}
                     className="ml-2 px-2 py-0.5 text-xs rounded bg-gray-700 hover:bg-gray-600"
                   >
@@ -1154,112 +1164,105 @@ function InfoPageContent() {
   // Render alignment visualization responsively
   const renderAlignment = () => {
     if (alignedSeq1.length === 0 || alignedSeq2.length === 0) return null
-    
+
     // Visualização em blocos (estilo original)
     if (alignmentViewMode === 'blocks') {
-    return (
-      <div className="bg-gray-800 rounded-lg p-5 overflow-x-auto">
-        <div className="flex flex-row flex-nowrap min-w-fit">
-          {alignedSeq1.map((char, index) => (
-            <div
-              key={index}
-              className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${
-                  highlightAlignmentIndices.includes(index) ? 'ring-2 ring-white scale-110 z-10' : ''
-                } ${
-                char === "-" ? "bg-red-500" : char === alignedSeq2[index] ? "bg-green-500" : "bg-yellow-500"
-              }`}
-            >
-              {char}
-            </div>
-          ))}
+      return (
+        <div className="bg-gray-800 rounded-lg p-5 overflow-x-auto">
+          <div className="flex flex-row flex-nowrap min-w-fit">
+            {alignedSeq1.map((char, index) => (
+              <div
+                key={index}
+                className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${highlightAlignmentIndices.includes(index) ? 'ring-2 ring-white scale-110 z-10' : ''
+                  } ${char === "-" ? "bg-red-500" : char === alignedSeq2[index] ? "bg-green-500" : "bg-yellow-500"
+                  }`}
+              >
+                {char}
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-row flex-nowrap min-w-fit mt-1">
+            {alignedSeq1.map((char, index) => (
+              <div key={index} className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${highlightAlignmentIndices.includes(index) ? 'text-white font-bold' : ''
+                }`}>
+                {char === alignedSeq2[index] ? "|" : char === "-" || alignedSeq2[index] === "-" ? " " : "."}
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-row flex-nowrap min-w-fit">
+            {alignedSeq2.map((char, index) => (
+              <div
+                key={index}
+                className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${highlightAlignmentIndices.includes(index) ? 'ring-2 ring-white scale-110 z-10' : ''
+                  } ${char === "-" ? "bg-red-500" : char === alignedSeq1[index] ? "bg-green-500" : "bg-yellow-500"
+                  }`}
+              >
+                {char}
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-row flex-nowrap min-w-fit mt-1">
-          {alignedSeq1.map((char, index) => (
-              <div key={index} className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${
-                highlightAlignmentIndices.includes(index) ? 'text-white font-bold' : ''
-              }`}>
-              {char === alignedSeq2[index] ? "|" : char === "-" || alignedSeq2[index] === "-" ? " " : "."}
-            </div>
-          ))}
-        </div>
-        <div className="flex flex-row flex-nowrap min-w-fit">
-          {alignedSeq2.map((char, index) => (
-            <div
-              key={index}
-              className={`p-2 font-mono w-8 h-8 flex items-center justify-center ${
-                  highlightAlignmentIndices.includes(index) ? 'ring-2 ring-white scale-110 z-10' : ''
-                } ${
-                char === "-" ? "bg-red-500" : char === alignedSeq1[index] ? "bg-green-500" : "bg-yellow-500"
-              }`}
-            >
-              {char}
-            </div>
-          ))}
-        </div>
-      </div>
       );
     }
-    
+
     // Visualização linear (estilo texto com cores)
     if (alignmentViewMode === 'linear') {
       // Dividir o alinhamento em grupos para melhor legibilidade
       const chunkSize = 50;
       const chunks: number[] = [];
-      
+
       for (let i = 0; i < alignedSeq1.length; i += chunkSize) {
         chunks.push(i);
       }
-      
+
       return (
         <div className="bg-gray-800 rounded-lg p-5">
           {chunks.map((startIndex, chunkIdx) => {
             const endIndex = Math.min(startIndex + chunkSize, alignedSeq1.length);
             const positions = Array.from({ length: endIndex - startIndex }, (_, i) => startIndex + i);
-            
+
             return (
               <div key={chunkIdx} className="mb-6">
                 <div className="text-gray-400 text-xs mb-1">Position: {startIndex + 1}-{endIndex}</div>
                 <div className="font-mono text-sm sm:text-base md:text-lg break-all whitespace-pre-wrap">
                   <span className="text-gray-400 mr-2">Seq1:</span>
                   {positions.map(i => (
-                    <span 
-                      key={i} 
+                    <span
+                      key={i}
                       className={`
                         ${highlightAlignmentIndices.includes(i) ? 'font-bold ring-1 ring-white px-0.5' : ''}
-                        ${
-                        alignedSeq1[i] === "-" 
+                        ${alignedSeq1[i] === "-"
                           ? "text-red-500"
                           : alignedSeq1[i] === alignedSeq2[i]
                             ? "text-green-500"
                             : "text-yellow-500"
-                      }`}
+                        }`}
                     >
                       {alignedSeq1[i]}
                     </span>
                   ))}
                 </div>
-                <div className="font-mono text-sm sm:text-base md:text-lg my-1">
+                {/* <div className="font-mono text-sm sm:text-base md:text-lg my-1">
                   <span className="text-gray-400 mr-2 invisible">...:</span>
                   {positions.map(i => (
                     <span key={i} className={`${highlightAlignmentIndices.includes(i) ? 'font-bold text-white' : ''}`}>
                       {alignedSeq1[i] === alignedSeq2[i] ? "|" : alignedSeq1[i] === "-" || alignedSeq2[i] === "-" ? " " : "."}
                     </span>
                   ))}
-                </div>
+                </div> */}
                 <div className="font-mono text-sm sm:text-base md:text-lg break-all whitespace-pre-wrap">
                   <span className="text-gray-400 mr-2">Seq2:</span>
                   {positions.map(i => (
-                    <span 
-                      key={i} 
+                    <span
+                      key={i}
                       className={`
                         ${highlightAlignmentIndices.includes(i) ? 'font-bold ring-1 ring-white px-0.5' : ''}
-                        ${
-                        alignedSeq2[i] === "-" 
+                        ${alignedSeq2[i] === "-"
                           ? "text-red-500"
                           : alignedSeq2[i] === alignedSeq1[i]
                             ? "text-green-500"
                             : "text-yellow-500"
-                      }`}
+                        }`}
                     >
                       {alignedSeq2[i]}
                     </span>
@@ -1271,7 +1274,7 @@ function InfoPageContent() {
         </div>
       );
     }
-    
+
     // Visualização compacta
     if (alignmentViewMode === 'compact') {
       return (
@@ -1283,12 +1286,11 @@ function InfoPageContent() {
             </div>
             <div>
               {alignedSeq1.map((char, index) => (
-                <span 
-                  key={index} 
+                <span
+                  key={index}
                   className={`
                     ${highlightAlignmentIndices.includes(index) ? 'font-bold ring-1 ring-white px-0.5' : ''}
-                    ${
-                    char === "-" 
+                    ${char === "-"
                       ? "text-red-500"
                       : char === alignedSeq2[index]
                         ? "text-green-500"
@@ -1306,12 +1308,11 @@ function InfoPageContent() {
             </div>
             <div>
               {alignedSeq2.map((char, index) => (
-                <span 
-                  key={index} 
+                <span
+                  key={index}
                   className={`
                     ${highlightAlignmentIndices.includes(index) ? 'font-bold ring-1 ring-white px-0.5' : ''}
-                    ${
-                    char === "-" 
+                    ${char === "-"
                       ? "text-red-500"
                       : char === alignedSeq1[index]
                         ? "text-green-500"
@@ -1323,19 +1324,19 @@ function InfoPageContent() {
               ))}
             </div>
             <div className="border-t border-gray-700 my-2"></div>
-            <div className="text-gray-400 mb-1">Matches:</div>
+            {/* <div className="text-gray-400 mb-1">Matches:</div>
             <div>
               {alignedSeq1.map((char, index) => (
                 <span key={index} className={`${highlightAlignmentIndices.includes(index) ? 'font-bold text-white' : ''}`}>
                   {char === alignedSeq2[index] ? "|" : char === "-" || alignedSeq2[index] === "-" ? " " : "."}
                 </span>
               ))}
-            </div>
+            </div> */}
           </div>
         </div>
       );
     }
-    
+
     // Visualização interativa
     if (alignmentViewMode === 'interactive') {
       return (
@@ -1344,30 +1345,30 @@ function InfoPageContent() {
             <div className="text-sm text-gray-400 mb-2">
               Hover over characters to see details
             </div>
-            
+
             {/* Tooltip fixo que não afeta o layout */}
             {hoveredIndex !== null && (
-              <div className="fixed bg-gray-900 rounded p-3 text-sm shadow-lg z-50" 
-                   style={{
-                     top: '50%', 
-                     right: '5%', 
-                     transform: 'translateY(-50%)',
-                     maxWidth: '250px',
-                     pointerEvents: 'none' // Não interfere com os eventos de mouse
-                   }}>
+              <div className="fixed bg-gray-900 rounded p-3 text-sm shadow-lg z-50"
+                style={{
+                  top: '50%',
+                  right: '5%',
+                  transform: 'translateY(-50%)',
+                  maxWidth: '250px',
+                  pointerEvents: 'none' // Não interfere com os eventos de mouse
+                }}>
                 <div className="font-bold border-b border-gray-700 pb-1 mb-2">Position: {hoveredIndex + 1}</div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <div>Seq1:</div> 
+                  <div>Seq1:</div>
                   <div className={alignedSeq1[hoveredIndex] === "-" ? "text-red-500 font-bold" : "text-white"}>
                     {alignedSeq1[hoveredIndex]}
                   </div>
-                  <div>Seq2:</div> 
+                  <div>Seq2:</div>
                   <div className={alignedSeq2[hoveredIndex] === "-" ? "text-red-500 font-bold" : "text-white"}>
                     {alignedSeq2[hoveredIndex]}
                   </div>
                   <div>Type:</div>
                   <div>
-                    {alignedSeq1[hoveredIndex] === alignedSeq2[hoveredIndex] 
+                    {alignedSeq1[hoveredIndex] === alignedSeq2[hoveredIndex]
                       ? <span className="text-green-500">Match</span>
                       : alignedSeq1[hoveredIndex] === "-" || alignedSeq2[hoveredIndex] === "-"
                         ? <span className="text-red-500">Gap</span>
@@ -1378,19 +1379,19 @@ function InfoPageContent() {
               </div>
             )}
           </div>
-          
+
           <div className="grid grid-cols-1 gap-4">
             <div>
               <div className="text-sm text-gray-400 mb-1">Sequence 1:</div>
               <div className="flex flex-wrap">
                 {alignedSeq1.map((char, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className={`
                       w-8 h-8 m-px flex items-center justify-center font-mono transition-all duration-150
                       ${index === hoveredIndex ? 'ring-2 ring-white scale-110 z-10' : ''}
                       ${highlightAlignmentIndices.includes(index) ? 'ring-2 ring-cyan-400 z-10' : ''}
-                      ${char === "-" 
+                      ${char === "-"
                         ? "bg-red-500"
                         : char === alignedSeq2[index]
                           ? "bg-green-500"
@@ -1405,18 +1406,18 @@ function InfoPageContent() {
                 ))}
               </div>
             </div>
-            
+
             <div>
               <div className="text-sm text-gray-400 mb-1">Sequence 2:</div>
               <div className="flex flex-wrap">
                 {alignedSeq2.map((char, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className={`
                       w-8 h-8 m-px flex items-center justify-center font-mono transition-all duration-150
                       ${index === hoveredIndex ? 'ring-2 ring-white scale-110 z-10' : ''}
                       ${highlightAlignmentIndices.includes(index) ? 'ring-2 ring-cyan-400 z-10' : ''}
-                      ${char === "-" 
+                      ${char === "-"
                         ? "bg-red-500"
                         : char === alignedSeq1[index]
                           ? "bg-green-500"
@@ -1435,19 +1436,19 @@ function InfoPageContent() {
         </div>
       );
     }
-    
+
     // Visualização detalhada com informações adicionais
     if (alignmentViewMode === 'detailed') {
       // Analisar o alinhamento para informações adicionais
       const analysisData = [];
-      
+
       // Calcular pontuação cumulativa
       let cumulativeScore = 0;
-      
+
       for (let i = 0; i < alignedSeq1.length; i++) {
         let positionScore = 0;
         let type = "";
-        
+
         if (alignedSeq1[i] === "-" || alignedSeq2[i] === "-") {
           positionScore = gapPenalty;
           type = "gap";
@@ -1458,9 +1459,9 @@ function InfoPageContent() {
           positionScore = mismatchPenalty;
           type = "mismatch";
         }
-        
+
         cumulativeScore += positionScore;
-        
+
         analysisData.push({
           pos: i,
           char1: alignedSeq1[i],
@@ -1470,15 +1471,15 @@ function InfoPageContent() {
           cumulativeScore
         });
       }
-      
+
       // Dividir o alinhamento em grupos para melhor legibilidade
       const chunkSize = 20;
       const chunks: number[] = [];
-      
+
       for (let i = 0; i < analysisData.length; i += chunkSize) {
         chunks.push(i);
       }
-      
+
       return (
         <div className="bg-gray-800 rounded-lg p-5 overflow-x-auto">
           <table className="min-w-full border-collapse">
@@ -1496,31 +1497,28 @@ function InfoPageContent() {
               {analysisData.map((item, i) => (
                 <tr key={i} className={i % 2 === 0 ? "bg-gray-800" : "bg-gray-750"}>
                   <td className="p-2 border-b border-gray-700">{i + 1}</td>
-                  <td className={`p-2 border-b border-gray-700 font-mono ${
-                    item.char1 === "-" 
-                      ? "text-red-500"
-                      : item.type === "match"
-                        ? "text-green-500"
-                        : "text-yellow-500"
-                  }`}>
+                  <td className={`p-2 border-b border-gray-700 font-mono ${item.char1 === "-"
+                    ? "text-red-500"
+                    : item.type === "match"
+                      ? "text-green-500"
+                      : "text-yellow-500"
+                    }`}>
                     {item.char1}
                   </td>
-                  <td className={`p-2 border-b border-gray-700 font-mono ${
-                    item.char2 === "-" 
-                      ? "text-red-500"
-                      : item.type === "match"
-                        ? "text-green-500"
-                        : "text-yellow-500"
-                  }`}>
+                  <td className={`p-2 border-b border-gray-700 font-mono ${item.char2 === "-"
+                    ? "text-red-500"
+                    : item.type === "match"
+                      ? "text-green-500"
+                      : "text-yellow-500"
+                    }`}>
                     {item.char2}
                   </td>
-                  <td className={`p-2 border-b border-gray-700 ${
-                    item.type === "match" 
-                      ? "text-green-500"
-                      : item.type === "gap"
-                        ? "text-red-500"
-                        : "text-yellow-500"
-                  }`}>
+                  <td className={`p-2 border-b border-gray-700 ${item.type === "match"
+                    ? "text-green-500"
+                    : item.type === "gap"
+                      ? "text-red-500"
+                      : "text-yellow-500"
+                    }`}>
                     {item.type === "match" ? "Match" : item.type === "gap" ? "Gap" : "Mismatch"}
                   </td>
                   <td className="p-2 border-b border-gray-700">
@@ -1540,7 +1538,7 @@ function InfoPageContent() {
         </div>
       );
     }
-    
+
     // Novo modo de visualização comparativa
     if (alignmentViewMode === 'comparative') {
       // Calculate alignment metrics
@@ -1548,16 +1546,16 @@ function InfoPageContent() {
       const matches = statistics.matches;
       const mismatches = statistics.mismatches;
       const gaps = statistics.gaps;
-      
+
       // Calculate position-by-position similarity
       const similarityData = [];
       let rollingAverage = [];
       const windowSize = 5; // Size of the rolling window
-      
+
       for (let i = 0; i < alignedSeq1.length; i++) {
         // Calculate similarity at this position (1 for match, 0 for mismatch, -1 for gaps)
         let similarity = 0;
-        
+
         if (alignedSeq1[i] === alignedSeq2[i]) {
           similarity = 1; // Match
         } else if (alignedSeq1[i] === '-' || alignedSeq2[i] === '-') {
@@ -1565,75 +1563,75 @@ function InfoPageContent() {
         } else {
           similarity = 0; // Mismatch
         }
-        
+
         // Update rolling window
         rollingAverage.push(similarity);
         if (rollingAverage.length > windowSize) {
           rollingAverage.shift();
         }
-        
+
         // Calculate average similarity in the current window
         const avgSimilarity = rollingAverage.reduce((sum, val) => sum + val, 0) / rollingAverage.length;
-        
+
         similarityData.push({
           position: i + 1,
           similarity: similarity,
           rollingAverage: avgSimilarity
         });
       }
-      
+
       // Count nucleotide/amino acid frequencies
-      const seq1Counts: {[key: string]: number} = {};
-      const seq2Counts: {[key: string]: number} = {};
-      
+      const seq1Counts: { [key: string]: number } = {};
+      const seq2Counts: { [key: string]: number } = {};
+
       // Count without gaps
       alignedSeq1.forEach(char => {
         if (char !== '-') {
           seq1Counts[char] = (seq1Counts[char] || 0) + 1;
         }
       });
-      
+
       alignedSeq2.forEach(char => {
         if (char !== '-') {
           seq2Counts[char] = (seq2Counts[char] || 0) + 1;
         }
       });
-      
+
       // Get all unique characters
       const allChars = Array.from(new Set([...alignedSeq1, ...alignedSeq2])).filter(char => char !== '-');
-      
+
       // Função para aplicar zoom nos gráficos
       const handleZoomChange = (start: number, end: number) => {
         setZoomRange({ start, end });
       };
-      
+
       // Definir os dados visíveis com base no zoom
-      const visibleData = zoomRange 
+      const visibleData = zoomRange
         ? similarityData.slice(zoomRange.start, zoomRange.end + 1)
         : similarityData;
-      
+
       // Calcular as marcas do eixo x com base nos dados visíveis
       const xLabels = zoomRange
         ? [
-            zoomRange.start,
-            Math.round(zoomRange.start + (zoomRange.end - zoomRange.start) * 0.25),
-            Math.round(zoomRange.start + (zoomRange.end - zoomRange.start) * 0.5),
-            Math.round(zoomRange.start + (zoomRange.end - zoomRange.start) * 0.75),
-            zoomRange.end
-          ]
+          zoomRange.start,
+          Math.round(zoomRange.start + (zoomRange.end - zoomRange.start) * 0.25),
+          Math.round(zoomRange.start + (zoomRange.end - zoomRange.start) * 0.5),
+          Math.round(zoomRange.start + (zoomRange.end - zoomRange.start) * 0.75),
+          zoomRange.end
+        ]
         : [
-            0,
-            Math.round(alignedSeq1.length * 0.25),
-            Math.round(alignedSeq1.length * 0.5),
-            Math.round(alignedSeq1.length * 0.75),
-            alignedSeq1.length
-          ];
+          0,
+          Math.round(alignedSeq1.length * 0.25),
+          Math.round(alignedSeq1.length * 0.5),
+          Math.round(alignedSeq1.length * 0.75),
+          alignedSeq1.length
+        ];
 
       return (
         <div className="bg-gray-800 rounded-lg p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Botões de zoom compartilhados */}
-            
+
 
             {/* Comparative Overview Chart */}
             <div className="bg-gray-900 rounded-lg p-4">
@@ -1641,7 +1639,7 @@ function InfoPageContent() {
               <div className="relative h-32 w-full">
                 <div className="absolute inset-0 flex">
                   {/* Match section */}
-                  <div 
+                  <div
                     className="h-full bg-green-500 flex items-center justify-center text-xs md:text-sm font-medium"
                     style={{ width: `${(matches / totalPositions) * 100}%` }}
                   >
@@ -1651,9 +1649,9 @@ function InfoPageContent() {
                       {Math.round((matches / totalPositions) * 100)}%
                     </span>
                   </div>
-                  
+
                   {/* Mismatch section */}
-                  <div 
+                  <div
                     className="h-full bg-yellow-500 flex items-center justify-center text-xs md:text-sm font-medium"
                     style={{ width: `${(mismatches / totalPositions) * 100}%` }}
                   >
@@ -1663,9 +1661,9 @@ function InfoPageContent() {
                       {Math.round((mismatches / totalPositions) * 100)}%
                     </span>
                   </div>
-                  
+
                   {/* Gap section */}
-                  <div 
+                  <div
                     className="h-full bg-red-500 flex items-center justify-center text-xs md:text-sm font-medium"
                     style={{ width: `${(gaps / totalPositions) * 100}%` }}
                   >
@@ -1677,7 +1675,7 @@ function InfoPageContent() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex justify-between mt-2 text-xs text-gray-400">
                 <div>0</div>
                 <div>{Math.round(totalPositions / 4)}</div>
@@ -1686,7 +1684,7 @@ function InfoPageContent() {
                 <div>{totalPositions}</div>
               </div>
             </div>
-            
+
             {/* Sequence Composition Comparison */}
             <div className="bg-gray-900 rounded-lg p-4">
               <h3 className="text-md font-semibold mb-3">Sequence Composition</h3>
@@ -1697,21 +1695,21 @@ function InfoPageContent() {
                   const maxCount = Math.max(seq1Count, seq2Count);
                   const barWidth1 = maxCount > 0 ? (seq1Count / maxCount) * 100 : 0;
                   const barWidth2 = maxCount > 0 ? (seq2Count / maxCount) * 100 : 0;
-                  
+
                   return (
                     <div key={char} className="flex items-center mb-1">
                       <div className="w-6 font-mono text-center">{char}</div>
                       <div className="w-full flex items-center">
                         <div className="w-1/2 flex justify-end pr-1">
-                          <div 
-                            className="h-4 bg-cyan-500 rounded-l" 
+                          <div
+                            className="h-4 bg-cyan-500 rounded-l"
                             style={{ width: `${barWidth1}%` }}
                           ></div>
                         </div>
                         <div className="text-xs px-2">{seq1Count}/{seq2Count}</div>
                         <div className="w-1/2 pl-1">
-                          <div 
-                            className="h-4 bg-purple-500 rounded-r" 
+                          <div
+                            className="h-4 bg-purple-500 rounded-r"
                             style={{ width: `${barWidth2}%` }}
                           ></div>
                         </div>
@@ -1731,8 +1729,8 @@ function InfoPageContent() {
                 </div>
               </div>
             </div>
-            
-            <div className="md:col-span-2 flex gap-2 mb-2">
+
+            <div className="flex gap-2 mb-2 flex-wrap justify-center items-center w-full text-center">
               <button
                 onClick={() => setZoomRange(null)}
                 className={`px-3 py-1 text-xs rounded ${!zoomRange ? 'bg-cyan-600' : 'bg-gray-700'}`}
@@ -1804,20 +1802,20 @@ function InfoPageContent() {
                 </>
               )}
               {zoomRange && (
-                <div className="ml-auto text-xs text-gray-400">
-                  Zoom: positions {zoomRange.start+1} - {zoomRange.end+1} ({zoomRange.end - zoomRange.start + 1} bases)
+                <div className="mt-5 lg:mt-0 lg:ml-10 text-xs text-gray-400 text-center">
+                  Zoom: positions {zoomRange.start + 1} - {zoomRange.end + 1} ({zoomRange.end - zoomRange.start + 1} bases)
                 </div>
               )}
             </div>
-            
+
             {/* Controles de navegação horizontal */}
             {zoomRange && (
-              <div className="md:col-span-2 flex justify-between items-center gap-2 mb-4">
+              <div className="flex justify-between items-center gap-2 mb-4 flex-wrap max-w-xl">
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
                       if (!zoomRange) return;
-                      
+
                       const windowSize = zoomRange.end - zoomRange.start + 1;
                       // Mover para o início
                       handleZoomChange(0, windowSize - 1);
@@ -1833,16 +1831,16 @@ function InfoPageContent() {
                       Start
                     </span>
                   </button>
-                  
+
                   <button
                     onClick={() => {
                       if (!zoomRange) return;
-                      
+
                       const windowSize = zoomRange.end - zoomRange.start + 1;
                       const stepSize = Math.max(1, Math.floor(windowSize * 0.5)); // Mover 50% da janela
                       const newStart = Math.max(0, zoomRange.start - stepSize);
                       const newEnd = newStart + windowSize - 1;
-                      
+
                       handleZoomChange(newStart, newEnd);
                     }}
                     disabled={zoomRange?.start === 0}
@@ -1856,16 +1854,16 @@ function InfoPageContent() {
                       Previous
                     </span>
                   </button>
-                  
+
                   <button
                     onClick={() => {
                       if (!zoomRange) return;
-                      
+
                       const windowSize = zoomRange.end - zoomRange.start + 1;
                       const stepSize = Math.max(1, Math.floor(windowSize * 0.1)); // Mover 10% da janela
                       const newStart = Math.max(0, zoomRange.start - stepSize);
                       const newEnd = newStart + windowSize - 1;
-                      
+
                       handleZoomChange(newStart, newEnd);
                     }}
                     disabled={zoomRange?.start === 0}
@@ -1879,7 +1877,6 @@ function InfoPageContent() {
                     </span>
                   </button>
                 </div>
-                
                 <div className="mx-auto">
                   <input
                     type="range"
@@ -1896,17 +1893,16 @@ function InfoPageContent() {
                     title="Slide to navigate horizontally"
                   />
                 </div>
-                
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
                       if (!zoomRange) return;
-                      
+
                       const windowSize = zoomRange.end - zoomRange.start + 1;
                       const stepSize = Math.max(1, Math.floor(windowSize * 0.1)); // Mover 10% da janela
                       const newEnd = Math.min(alignedSeq1.length - 1, zoomRange.end + stepSize);
                       const newStart = Math.max(0, newEnd - windowSize + 1);
-                      
+
                       handleZoomChange(newStart, newEnd);
                     }}
                     disabled={zoomRange?.end === alignedSeq1.length - 1}
@@ -1919,16 +1915,16 @@ function InfoPageContent() {
                       </svg>
                     </span>
                   </button>
-                  
+
                   <button
                     onClick={() => {
                       if (!zoomRange) return;
-                      
+
                       const windowSize = zoomRange.end - zoomRange.start + 1;
                       const stepSize = Math.max(1, Math.floor(windowSize * 0.5)); // Mover 50% da janela
                       const newEnd = Math.min(alignedSeq1.length - 1, zoomRange.end + stepSize);
                       const newStart = Math.max(0, newEnd - windowSize + 1);
-                      
+
                       handleZoomChange(newStart, newEnd);
                     }}
                     disabled={zoomRange?.end === alignedSeq1.length - 1}
@@ -1942,15 +1938,15 @@ function InfoPageContent() {
                       </svg>
                     </span>
                   </button>
-                  
+
                   <button
                     onClick={() => {
                       if (!zoomRange) return;
-                      
+
                       const windowSize = zoomRange.end - zoomRange.start + 1;
                       const newEnd = alignedSeq1.length - 1;
                       const newStart = Math.max(0, newEnd - windowSize + 1);
-                      
+
                       handleZoomChange(newStart, newEnd);
                     }}
                     disabled={zoomRange?.end === alignedSeq1.length - 1}
@@ -1967,14 +1963,14 @@ function InfoPageContent() {
                 </div>
               </div>
             )}
-            
+
             {/* Similarity Profile */}
             <div className="bg-gray-900 rounded-lg p-4 md:col-span-2">
               <h3 className="text-md font-semibold mb-3">Similarity Profile</h3>
               <div className="relative h-40">
                 {/* Baseline (zero line) */}
                 <div className="absolute w-full h-px bg-gray-500 top-1/2 left-0"></div>
-                
+
                 {/* Position markers */}
                 <div className="absolute w-full bottom-0 left-0 flex justify-between text-xs text-gray-400">
                   {xLabels.map(position => (
@@ -1984,38 +1980,38 @@ function InfoPageContent() {
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Plot similarity points and rolling average */}
-                <svg className="absolute inset-0 w-full h-full" 
-                     viewBox={zoomRange 
-                       ? `${zoomRange.start} 0 ${zoomRange.end - zoomRange.start + 1} 2` 
-                       : `0 0 ${alignedSeq1.length} 2`} 
-                     preserveAspectRatio="none">
+                <svg className="absolute inset-0 w-full h-full"
+                  viewBox={zoomRange
+                    ? `${zoomRange.start} 0 ${zoomRange.end - zoomRange.start + 1} 2`
+                    : `0 0 ${alignedSeq1.length} 2`}
+                  preserveAspectRatio="none">
                   {/* Rolling average line */}
-                  <polyline 
+                  <polyline
                     points={visibleData.map(d => `${d.position - 1},${1 - (d.rollingAverage + 1) / 2}`).join(' ')}
                     fill="none"
                     stroke="rgba(14, 165, 233, 0.7)"
                     strokeWidth="0.02"
                   />
-                  
+
                   {/* Individual points */}
                   {visibleData.map((d, i) => (
-                    <circle 
+                    <circle
                       key={i}
                       cx={d.position - 1}
                       cy={1 - (d.similarity + 1) / 2}
                       r="0.03"
                       fill={
-                        d.similarity === 1 ? 'rgb(34, 197, 94)' : 
-                        d.similarity === 0 ? 'rgb(234, 179, 8)' : 
-                        'rgb(239, 68, 68)'
+                        d.similarity === 1 ? 'rgb(34, 197, 94)' :
+                          d.similarity === 0 ? 'rgb(234, 179, 8)' :
+                            'rgb(239, 68, 68)'
                       }
                     />
                   ))}
                 </svg>
               </div>
-              
+
               <div className="flex justify-between text-xs text-gray-400 mt-2">
                 <div className="flex items-center">
                   <div className="w-3 h-3 bg-green-500 mr-1 rounded"></div>
@@ -2042,7 +2038,7 @@ function InfoPageContent() {
               <div className="w-full h-10 flex">
                 {visibleData.map((d, i) => {
                   let color = 'bg-gray-700';
-                  
+
                   // Check for conserved regions (consistent matching)
                   if (i > 0 && i < visibleData.length - 1) {
                     // Sistema de cores mais detalhado e exato
@@ -2070,14 +2066,21 @@ function InfoPageContent() {
                       color = 'bg-red-800'; // Altamente divergente (-100% a -90%)
                     }
                   }
-                  
+
                   return (
                     <div
                       key={i}
-                      className={`h-full ${color}`}
+                      className={`h-full ${color} relative hover:px-7 cursor-pointer group`}
                       style={{ width: `${100 / visibleData.length}%` }}
-                      title={`Position ${d.position}: ${alignedSeq1[d.position-1]}/${alignedSeq2[d.position-1]}, Conservation: ${(d.rollingAverage * 100).toFixed(1)}%`}
-                    ></div>
+                      title={`Position ${d.position}: ${alignedSeq1[d.position - 1]}/${alignedSeq2[d.position - 1]}, Conservation: ${(d.rollingAverage * 100).toFixed(1)}%`}
+                    >
+                      <span className={`${!zoomRange || zoomRange.end - zoomRange.start + 1 > 115 ? "invisible group-hover:visible" : "visible"} absolute top-1 left-1 font-medium text-black text-[10px]`}>
+                        {d.position}
+                      </span>
+                      <span className={`${!zoomRange || zoomRange.end - zoomRange.start + 1 > 100 ? "invisible group-hover:visible" : "visible"} absolute top-4 left-1/2 -translate-x-1/2 font-bold text-white text-[12px]`}>
+                        {alignedSeq1[d.position - 1]}/{alignedSeq2[d.position - 1]}
+                      </span>
+                    </div>
                   );
                 })}
               </div>
@@ -2086,72 +2089,77 @@ function InfoPageContent() {
                   <div key={position}>{position + 1}</div>
                 ))}
               </div>
-              <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-11 gap-y-2 text-xs text-gray-400 mt-3 text-center">
-                <div className="flex flex-col items-center">
-                  <div className="w-full h-3 bg-green-800 mb-1 rounded"></div>
-                  <span>90-100%</span>
+
+              {showSubtitles && (
+                <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-11 gap-y-2 text-xs text-gray-400 mt-3 text-center">
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-3 bg-green-800 mb-1 rounded"></div>
+                    <span>90-100%</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-3 bg-green-600 mb-1 rounded"></div>
+                    <span>70-90%</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-3 bg-green-500 mb-1 rounded"></div>
+                    <span>50-70%</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-3 bg-green-400 mb-1 rounded"></div>
+                    <span>30-50%</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-3 bg-yellow-400 mb-1 rounded"></div>
+                    <span>10-30%</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-3 bg-yellow-600 mb-1 rounded"></div>
+                    <span>±10%</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-3 bg-orange-500 mb-1 rounded"></div>
+                    <span>-10-30%</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-3 bg-orange-700 mb-1 rounded"></div>
+                    <span>-30-50%</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-3 bg-red-500 mb-1 rounded"></div>
+                    <span>-50-70%</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-3 bg-red-600 mb-1 rounded"></div>
+                    <span>-70-90%</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-full h-3 bg-red-800 mb-1 rounded"></div>
+                    <span>-90-100%</span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-full h-3 bg-green-600 mb-1 rounded"></div>
-                  <span>70-90%</span>
+              )}
+              {showSubtitles && (
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-gray-400 mt-4">
+                  <div className="flex items-center">
+                    <span className="font-semibold text-green-500">Conserved:</span>
+                    <span className="ml-1">similar sequences, likely functional importance</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="font-semibold text-yellow-500">Variable:</span>
+                    <span className="ml-1">regions with moderate variability</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="font-semibold text-red-500">Divergent:</span>
+                    <span className="ml-1">regions with high differentiation or gaps</span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-full h-3 bg-green-500 mb-1 rounded"></div>
-                  <span>50-70%</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-full h-3 bg-green-400 mb-1 rounded"></div>
-                  <span>30-50%</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-full h-3 bg-yellow-400 mb-1 rounded"></div>
-                  <span>10-30%</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-full h-3 bg-yellow-600 mb-1 rounded"></div>
-                  <span>±10%</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-full h-3 bg-orange-500 mb-1 rounded"></div>
-                  <span>-10-30%</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-full h-3 bg-orange-700 mb-1 rounded"></div>
-                  <span>-30-50%</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-full h-3 bg-red-500 mb-1 rounded"></div>
-                  <span>-50-70%</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-full h-3 bg-red-600 mb-1 rounded"></div>
-                  <span>-70-90%</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-full h-3 bg-red-800 mb-1 rounded"></div>
-                  <span>-90-100%</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-gray-400 mt-4">
-                <div className="flex items-center">
-                  <span className="font-semibold text-green-500">Conserved:</span>
-                  <span className="ml-1">similar sequences, likely functional importance</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="font-semibold text-yellow-500">Variable:</span>
-                  <span className="ml-1">regions with moderate variability</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="font-semibold text-red-500">Divergent:</span>
-                  <span className="ml-1">regions with high differentiation or gaps</span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
       );
     }
-    
+
     return null;
   }
 
@@ -2172,7 +2180,7 @@ function InfoPageContent() {
             <Link href="/" className="font-bold text-gray-100 transition-all">
               ← Back
             </Link>
-            <button 
+            <button
               onClick={copyUrlToClipboard}
               className="bg-gray-700 hover:bg-gray-600 text-white py-1 px-3 rounded text-sm transition-all flex items-center gap-1"
             >
@@ -2268,28 +2276,28 @@ function InfoPageContent() {
                     <div className="bg-gray-800 rounded-full w-5 h-5 flex items-center justify-center mr-2 cursor-help group relative">
                       <span className="text-xs text-gray-300">?</span>
                       <div className="absolute hidden group-hover:block bottom-full right-0 mb-2 w-64 p-2 bg-gray-900 rounded shadow-lg text-xs text-gray-300 z-10">
-                        The scoring matrix is the central structure of the algorithm, where each cell 
-                        represents the maximum score for the alignment of subsequences 
-                        up to that point. Try different visualization modes to better understand 
+                        The scoring matrix is the central structure of the algorithm, where each cell
+                        represents the maximum score for the alignment of subsequences
+                        up to that point. Try different visualization modes to better understand
                         how the algorithm works.
-              </div>
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div className="bg-gray-800 rounded-lg p-4 md:p-5 overflow-auto">
                   <p className="mb-4 text-gray-400 text-sm md:text-base">
-                  The score matrix shows the values ​​calculated during the execution of the algorithm.
+                    The score matrix shows the values ​​calculated during the execution of the algorithm.
                     {matrixViewMode === 'standard' && (
                       <>
-                        The colors indicate the type of operation: <span className="text-green-400">match</span>, 
-                    <span className="text-yellow-400"> mismatch</span>, or <span className="text-red-400">gap</span>.
+                        The colors indicate the type of operation: <span className="text-green-400">match</span>,
+                        <span className="text-yellow-400"> mismatch</span>, or <span className="text-red-400">gap</span>.
                         The letters in the bottom right corner of each cell indicate the traceback direction:
-                    D (diagonal), U (up), L (left).
+                        D (diagonal), U (up), L (left).
                       </>
                     )}
                     {matrixViewMode === 'heatmap' && (
                       <>
-                        The heatmap represents numerical values: warmer tones (red) 
+                        The heatmap represents numerical values: warmer tones (red)
                         indicate higher values and cooler tones (blue) indicate lower values.
                       </>
                     )}
@@ -2337,42 +2345,42 @@ function InfoPageContent() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-4 mb-4">
-                  <button 
+                  <button
                     onClick={() => setAlignmentViewMode('blocks')}
                     className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'blocks' ? 'bg-cyan-600' : 'bg-gray-700'}`}
                     title="Visualization of characters in colored blocks"
                   >
                     Block View
                   </button>
-                  <button 
+                  <button
                     onClick={() => setAlignmentViewMode('linear')}
                     className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'linear' ? 'bg-cyan-600' : 'bg-gray-700'}`}
                     title="Display in text format with colors for easier reading"
                   >
                     Linear View
                   </button>
-                  <button 
+                  <button
                     onClick={() => setAlignmentViewMode('detailed')}
                     className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'detailed' ? 'bg-cyan-600' : 'bg-gray-700'}`}
                     title="Position-by-position analysis with scoring details"
                   >
                     Detailed Analysis
                   </button>
-                  <button 
+                  <button
                     onClick={() => setAlignmentViewMode('compact')}
                     className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'compact' ? 'bg-cyan-600' : 'bg-gray-700'}`}
                     title="Compact view of aligned sequences"
                   >
                     Compact View
                   </button>
-                  <button 
+                  <button
                     onClick={() => setAlignmentViewMode('interactive')}
                     className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'interactive' ? 'bg-cyan-600' : 'bg-gray-700'}`}
                     title="Interactive visualization with hover details"
                   >
                     Interactive View
                   </button>
-                  <button 
+                  <button
                     onClick={() => setAlignmentViewMode('comparative')}
                     className={`px-3 py-1 text-sm rounded ${alignmentViewMode === 'comparative' ? 'bg-cyan-600' : 'bg-gray-700'}`}
                     title="Comparative charts and analytics"
@@ -2401,31 +2409,33 @@ function InfoPageContent() {
                 {renderAlignment()}
               </div>
 
-              <div className="mt-10">
-                <h2 className="text-lg md:text-xl font-bold mb-4">Algorithm Explanation</h2>
-                <div className="bg-gray-800 rounded-lg p-4 md:p-5">
-                  <p className="mb-2 text-sm md:text-base">The Needleman-Wunsch algorithm is a method for global sequence alignment that follows these steps:</p>
-                  <ol className="list-decimal pl-5 space-y-2 text-sm md:text-base">
-                    <li>
-                      <strong>Initialization:</strong> Create a scoring matrix and fill the first row and column with accumulated gap values.
-                    </li>
-                    <li>
-                      <strong>Matrix Filling:</strong> For each cell in the matrix, calculate the best value considering:
-                      <ul className="list-disc pl-5 mt-1">
-                        <li>Diagonal (match/mismatch): value from the upper-left diagonal cell + match/mismatch score</li>
-                        <li>Up (gap): value from the cell above + gap penalty</li>
-                        <li>Left (gap): value from the cell to the left + gap penalty</li>
-                      </ul>
-                    </li>
-                    <li>
-                      <strong>Traceback:</strong> Starting from the bottom-right cell, follow the path of highest scores to build the alignment.
-                    </li>
-                  </ol>
-                  <p className="mt-4 text-sm md:text-base">
-                    The final result is the optimized alignment of the two sequences, where the total score is maximized.
-                  </p>
+              {showSubtitles && (
+                <div className="mt-10">
+                  <h2 className="text-lg md:text-xl font-bold mb-4">Algorithm Explanation</h2>
+                  <div className="bg-gray-800 rounded-lg p-4 md:p-5">
+                    <p className="mb-2 text-sm md:text-base">The Needleman-Wunsch algorithm is a method for global sequence alignment that follows these steps:</p>
+                    <ol className="list-decimal pl-5 space-y-2 text-sm md:text-base">
+                      <li>
+                        <strong>Initialization:</strong> Create a scoring matrix and fill the first row and column with accumulated gap values.
+                      </li>
+                      <li>
+                        <strong>Matrix Filling:</strong> For each cell in the matrix, calculate the best value considering:
+                        <ul className="list-disc pl-5 mt-1">
+                          <li>Diagonal (match/mismatch): value from the upper-left diagonal cell + match/mismatch score</li>
+                          <li>Up (gap): value from the cell above + gap penalty</li>
+                          <li>Left (gap): value from the cell to the left + gap penalty</li>
+                        </ul>
+                      </li>
+                      <li>
+                        <strong>Traceback:</strong> Starting from the bottom-right cell, follow the path of highest scores to build the alignment.
+                      </li>
+                    </ol>
+                    <p className="mt-4 text-sm md:text-base">
+                      The final result is the optimized alignment of the two sequences, where the total score is maximized.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )
         ) : (
