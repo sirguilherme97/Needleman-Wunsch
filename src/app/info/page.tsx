@@ -901,7 +901,7 @@ function InfoPageContent() {
               <button
                 onClick={toggleChunking}
                 className={`px-3 py-1 text-xs rounded ${renderingChunks ? 'bg-cyan-600 animate-pulse' : 'bg-gray-700'} hover:bg-gray-600 flex items-center gap-1`}
-                title={renderingChunks ? "Carregando em partes para evitar travamentos" : "Carregar matriz inteira de uma vez"}
+                title={renderingChunks ? "Loading in parts to avoid crashes" : "Load entire array at once"}
               >
                 <span>{renderingChunks ? "Progressive Loading" : "Load All"}</span>
                 {renderingChunks && <span className="text-xs">({renderedChunks.length * chunkSize}/{scoreMatrix.length})</span>}
@@ -1246,24 +1246,24 @@ function InfoPageContent() {
 
           {selectedCell && (
             <div className="mt-4 bg-gray-800 p-3 rounded-lg text-sm">
-              <h4 className="font-semibold mb-1">Célula Selecionada:</h4>
+              <h4 className="font-semibold mb-1">Selected Cell:</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <div>
-                  <span className="text-gray-400">Posição:</span> {selectedCell.i}×{selectedCell.j}
+                  <span className="text-gray-400">Position:</span> {selectedCell.i}×{selectedCell.j}
                 </div>
                 <div>
-                  <span className="text-gray-400">Valor:</span> {scoreMatrix[selectedCell.i][selectedCell.j]}
+                  <span className="text-gray-400">Value:</span> {scoreMatrix[selectedCell.i][selectedCell.j]}
                 </div>
                 <div>
-                  <span className="text-gray-400">Direção:</span> {tracebackMatrix[selectedCell.i][selectedCell.j]}
+                  <span className="text-gray-400">Direction:</span> {tracebackMatrix[selectedCell.i][selectedCell.j]}
                 </div>
                 <div>
-                  <span className="text-gray-400">Caracteres:</span> {selectedCell.i > 0 ? seq1[selectedCell.i - 1] : '-'}×{selectedCell.j > 0 ? seq2[selectedCell.j - 1] : '-'}
+                  <span className="text-gray-400">Characters:</span> {selectedCell.i > 0 ? seq1[selectedCell.i - 1] : '-'}×{selectedCell.j > 0 ? seq2[selectedCell.j - 1] : '-'}
                 </div>
               </div>
               {highlightAlignmentIndices.length > 0 && (
                 <div className="mt-2 pt-2 border-t border-gray-700">
-                  <span className="text-gray-400">Posições destacadas no alinhamento:</span> {highlightAlignmentIndices.length}
+                  <span className="text-gray-400">Highlighted positions in the alignment:</span> {highlightAlignmentIndices.length}
                   <button
                     onClick={() => setHighlightAlignmentIndices([])}
                     className="ml-2 px-2 py-0.5 text-xs rounded bg-gray-700 hover:bg-gray-600"
