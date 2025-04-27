@@ -1,8 +1,36 @@
 'use client'
-import React, { useState, useEffect, Suspense } from 'react'
+import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
+
+// Definição da interface para estatísticas de alinhamento
+interface AlignmentStatistics {
+  matches: number;
+  mismatches: number;
+  gaps: number;
+  identity: number;
+  length: number;
+  normalizedScore: number;
+  gapDistribution: {
+    continuousBlocks: number;
+    averageGapLength: number;
+    gapsInSeq1: number;
+    gapsInSeq2: number;
+  };
+  longestMatchBlock: number;
+  conservedRegions: number;
+  conservedRegionsDetails: Array<{
+    start: number;
+    end: number;
+    length: number;
+  }>;
+  originalLengths: {
+    seq1: number;
+    seq2: number;
+  };
+  gapPercentage: number;
+}
 
 // Componente que usa useSearchParams
 function InfoPageContent() {
@@ -17,13 +45,28 @@ function InfoPageContent() {
   const [alignedSeq1, setAlignedSeq1] = useState<string[]>([])
   const [alignedSeq2, setAlignedSeq2] = useState<string[]>([])
   const [alignmentScore, setAlignmentScore] = useState(0)
-  const [statistics, setStatistics] = useState({
+  const [statistics, setStatistics] = useState<AlignmentStatistics>({
     matches: 0,
     mismatches: 0,
     gaps: 0,
     identity: 0,
-    length: 0
-  })
+    length: 0,
+    normalizedScore: 0,
+    gapDistribution: {
+      continuousBlocks: 0,
+      averageGapLength: 0,
+      gapsInSeq1: 0,
+      gapsInSeq2: 0
+    },
+    longestMatchBlock: 0,
+    conservedRegions: 0,
+    conservedRegionsDetails: [],
+    originalLengths: {
+      seq1: 0,
+      seq2: 0
+    },
+    gapPercentage: 0
+  });
   const [copySuccess, setCopySuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [progressStatus, setProgressStatus] = useState("Initializing...")
@@ -261,26 +304,98 @@ function InfoPageContent() {
     let matches = 0
     let mismatches = 0
     let gaps = 0
+    let gapsSeq1 = 0
+    let gapsSeq2 = 0
+    let continuousGapBlocks = 0
+    let inGapBlock = false
+    let longestMatchBlock = 0
+    let currentMatchBlock = 0
+    let conservedRegions = []
 
     for (let i = 0; i < seq1.length; i++) {
-      if (seq1[i] === '-' || seq2[i] === '-') {
+      // Contagem de gaps para cada sequência
+      if (seq1[i] === '-') {
         gaps++
-      } else if (seq1[i] === seq2[i]) {
-        matches++
+        gapsSeq1++
+
+        if (!inGapBlock || seq2[i - 1] !== '-') {
+          inGapBlock = true
+          continuousGapBlocks++
+        }
+      } else if (seq2[i] === '-') {
+        gaps++
+        gapsSeq2++
+
+        if (!inGapBlock || seq1[i - 1] !== '-') {
+          inGapBlock = true
+          continuousGapBlocks++
+        }
       } else {
-        mismatches++
+        inGapBlock = false
+
+        // Verificar matches e contar blocos conservados
+        if (seq1[i] === seq2[i]) {
+          matches++
+          currentMatchBlock++
+
+          if (currentMatchBlock >= 3) { // Define blocos conservados como pelo menos 3 matches consecutivos
+            if (conservedRegions.length === 0 || i - currentMatchBlock + 1 > conservedRegions[conservedRegions.length - 1].end) {
+              conservedRegions.push({
+                start: i - currentMatchBlock + 1,
+                end: i,
+                length: currentMatchBlock
+              })
+            } else {
+              conservedRegions[conservedRegions.length - 1].end = i
+              conservedRegions[conservedRegions.length - 1].length = i - conservedRegions[conservedRegions.length - 1].start + 1
+            }
+          }
+
+          if (currentMatchBlock > longestMatchBlock) {
+            longestMatchBlock = currentMatchBlock
+          }
+        } else {
+          mismatches++
+          currentMatchBlock = 0
+        }
       }
     }
 
     const length = seq1.length
     const identity = matches > 0 ? (matches / length) * 100 : 0
+    const gapPercentage = (gaps / (length * 2)) * 100
+
+    // Remover gaps para calcular comprimentos originais
+    const originalSeq1Length = seq1.filter(char => char !== '-').length
+    const originalSeq2Length = seq2.filter(char => char !== '-').length
+
+    // Calcular escore normalizado (assumindo que temos acesso a alignmentScore)
+    const normalizedScore = alignmentScore / length
+
+    // Cálculo de distribuição de gaps
+    const gapDistribution = {
+      continuousBlocks: continuousGapBlocks,
+      averageGapLength: gaps / (continuousGapBlocks || 1),
+      gapsInSeq1: gapsSeq1,
+      gapsInSeq2: gapsSeq2
+    }
 
     return {
       matches,
       mismatches,
       gaps,
       identity: parseFloat(identity.toFixed(2)),
-      length
+      length,
+      normalizedScore: parseFloat(normalizedScore.toFixed(2)),
+      gapDistribution,
+      longestMatchBlock,
+      conservedRegions: conservedRegions.length,
+      conservedRegionsDetails: conservedRegions,
+      originalLengths: {
+        seq1: originalSeq1Length,
+        seq2: originalSeq2Length
+      },
+      gapPercentage: parseFloat(gapPercentage.toFixed(2))
     }
   }
 
@@ -739,7 +854,7 @@ function InfoPageContent() {
         )}
 
         {/* Controles de visualização da tabela */}
-        <div className="flex justify-between items-center mb-2 bg-gray-800 p-2 rounded">
+        <div className="flex justify-between items-center mb-0 bg-gray-800 p-2 rounded">
           <div className="flex gap-3">
             <button
               onClick={() => {
@@ -1682,177 +1797,7 @@ function InfoPageContent() {
               {/* Adicionando informações sobre regiões */}
               <div className="mt-4 grid grid-cols-1 gap-2 ">
                 {/* Análise de regiões */}
-                <div className="flex flex-col">
-                  <h4 className="text-md font-semibold mb-3 mt-5">Regions of interest:</h4>
-
-                  {/* Melhores e piores regiões */}
-                  <div className="flex flex-col rounded-md p-2 text-xs space-y-2">
-                    {/* Melhores regiões - maior concentração de matches */}
-                    {(() => {
-                      // Encontrar região com maior concentração de matches
-                      const windowSize = Math.min(10, alignedSeq1.length);
-                      let bestRegionStart = 0;
-                      let bestRegionMatchCount = 0;
-
-                      // Buscar a melhor região
-                      for (let i = 0; i <= alignedSeq1.length - windowSize; i++) {
-                        let matchCount = 0;
-                        for (let j = i; j < i + windowSize; j++) {
-                          if (alignedSeq1[j] === alignedSeq2[j] && alignedSeq1[j] !== '-') {
-                            matchCount++;
-                          }
-                        }
-
-                        if (matchCount > bestRegionMatchCount) {
-                          bestRegionMatchCount = matchCount;
-                          bestRegionStart = i;
-                        }
-                      }
-
-                      // Calcular porcentagem de matches na melhor região
-                      const bestRegionMatchPercentage = Math.round((bestRegionMatchCount / windowSize) * 100);
-
-                      return (
-                        <div className="flex flex-col">
-                          <span className="text-green-400 font-medium">Best region (matches):</span>
-                          <div className="flex items-center space-x-2">
-                            <div className="flex-shrink-0 w-20 text-gray-400">Position</div>
-                            <div>{bestRegionStart + 1}-{bestRegionStart + windowSize}</div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="flex-shrink-0 w-20 text-gray-400">Matches:</div>
-                            <div>{bestRegionMatchCount} ({bestRegionMatchPercentage}%)</div>
-                          </div>
-                          <div className="flex mt-1 overflow-hidden rounded-sm">
-                            {alignedSeq1.slice(bestRegionStart, bestRegionStart + windowSize).map((char, idx) => (
-                              <span
-                                key={idx}
-                                className={`w-4 h-4 flex items-center justify-center text-[9px] ${char === alignedSeq2[bestRegionStart + idx] && char !== '-'
-                                  ? "bg-green-500"
-                                  : char === '-' || alignedSeq2[bestRegionStart + idx] === '-'
-                                    ? "bg-red-500"
-                                    : "bg-yellow-500"
-                                  }`}
-                              >
-                                {char}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Piores regiões - maior concentração de gaps */}
-                    {(() => {
-                      // Encontrar região com maior concentração de gaps
-                      const windowSize = Math.min(10, alignedSeq1.length);
-                      let worstRegionStart = 0;
-                      let worstRegionGapCount = 0;
-
-                      // Buscar a pior região
-                      for (let i = 0; i <= alignedSeq1.length - windowSize; i++) {
-                        let gapCount = 0;
-                        for (let j = i; j < i + windowSize; j++) {
-                          if (alignedSeq1[j] === '-' || alignedSeq2[j] === '-') {
-                            gapCount++;
-                          }
-                        }
-
-                        if (gapCount > worstRegionGapCount) {
-                          worstRegionGapCount = gapCount;
-                          worstRegionStart = i;
-                        }
-                      }
-
-                      // Calcular porcentagem de gaps na pior região
-                      const worstRegionGapPercentage = Math.round((worstRegionGapCount / windowSize) * 100);
-
-                      return (
-                        <div className="flex flex-col mt-2">
-                          <span className="text-red-400 font-medium">Worst region (gaps):</span>
-                          <div className="flex items-center space-x-2">
-                            <div className="flex-shrink-0 w-20 text-gray-400">Position</div>
-                            <div>{worstRegionStart + 1}-{worstRegionStart + windowSize}</div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="flex-shrink-0 w-20 text-gray-400">Gaps:</div>
-                            <div>{worstRegionGapCount} ({worstRegionGapPercentage}%)</div>
-                          </div>
-                          <div className="flex mt-1 overflow-hidden rounded-sm">
-                            {alignedSeq1.slice(worstRegionStart, worstRegionStart + windowSize).map((char, idx) => (
-                              <span
-                                key={idx}
-                                className={`w-4 h-4 flex items-center justify-center text-[9px] ${char === alignedSeq2[worstRegionStart + idx] && char !== '-'
-                                  ? "bg-green-500"
-                                  : char === '-' || alignedSeq2[worstRegionStart + idx] === '-'
-                                    ? "bg-red-500"
-                                    : "bg-yellow-500"
-                                  }`}
-                              >
-                                {char}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Região com mais mismatches */}
-                    {(() => {
-                      // Encontrar região com maior concentração de mismatches
-                      const windowSize = Math.min(10, alignedSeq1.length);
-                      let mismatchRegionStart = 0;
-                      let mismatchRegionCount = 0;
-
-                      // Buscar região com mais mismatches
-                      for (let i = 0; i <= alignedSeq1.length - windowSize; i++) {
-                        let mismatchCount = 0;
-                        for (let j = i; j < i + windowSize; j++) {
-                          if (alignedSeq1[j] !== alignedSeq2[j] && alignedSeq1[j] !== '-' && alignedSeq2[j] !== '-') {
-                            mismatchCount++;
-                          }
-                        }
-
-                        if (mismatchCount > mismatchRegionCount) {
-                          mismatchRegionCount = mismatchCount;
-                          mismatchRegionStart = i;
-                        }
-                      }
-
-                      // Calcular porcentagem de mismatches na região
-                      const mismatchPercentage = Math.round((mismatchRegionCount / windowSize) * 100);
-
-                      return (
-                        <div className="flex flex-col mt-2">
-                          <span className="text-yellow-400 font-medium">Region with most mismatches:</span>
-                          <div className="flex items-center space-x-2">
-                            <div className="flex-shrink-0 w-20 text-gray-400">Position</div>
-                            <div>{mismatchRegionStart + 1}-{mismatchRegionStart + windowSize}</div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="flex-shrink-0 w-20 text-gray-400">Mismatches:</div>
-                            <div>{mismatchRegionCount} ({mismatchPercentage}%)</div>
-                          </div>
-                          <div className="flex mt-1 overflow-hidden rounded-sm">
-                            {alignedSeq1.slice(mismatchRegionStart, mismatchRegionStart + windowSize).map((char, idx) => (
-                              <span
-                                key={idx}
-                                className={`w-4 h-4 flex items-center justify-center text-[9px] ${char === alignedSeq2[mismatchRegionStart + idx] && char !== '-'
-                                  ? "bg-green-500"
-                                  : char === '-' || alignedSeq2[mismatchRegionStart + idx] === '-'
-                                    ? "bg-red-500"
-                                    : "bg-yellow-500"
-                                  }`}
-                              >
-                                {char}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
+              
               </div>
             </div>
 
@@ -2436,7 +2381,108 @@ function InfoPageContent() {
                       <p className="text-gray-400">Gaps:</p>
                       <p className="font-mono text-red-400">{statistics.gaps}</p>
                     </div>
+                    <div>
+                      <p className="text-gray-400">Normalized Score:</p>
+                      <p className="font-mono text-cyan-400">{statistics.normalizedScore}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Original Sequences:</p>
+                      <p className="font-mono">
+                        <span className="text-blue-400">{statistics.originalLengths.seq1}</span> /
+                        <span className="text-purple-400"> {statistics.originalLengths.seq2}</span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Longest Match Block:</p>
+                      <p className="font-mono text-green-400">{statistics.longestMatchBlock}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Conserved Regions:</p>
+                      <p className="font-mono text-green-400">{statistics.conservedRegions}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Gap Distribution:</p>
+                      <p className="font-mono text-red-400">{statistics.gapDistribution.continuousBlocks} blocks</p>
+                    </div>
                   </div>
+
+                  {/* Visualização gráfica da proporção matches/mismatches/gaps */}
+                  <div className="mt-4">
+                    <p className="text-gray-400 mb-2">Composition:</p>
+                    <div className="w-full h-4 rounded-full overflow-hidden flex">
+                      <div
+                        className="bg-green-500 h-full"
+                        style={{ width: `${(statistics.matches / statistics.length) * 100}%` }}
+                        title={`Matches: ${statistics.matches} (${((statistics.matches / statistics.length) * 100).toFixed(1)}%)`}
+                      ></div>
+                      <div
+                        className="bg-yellow-500 h-full"
+                        style={{ width: `${(statistics.mismatches / statistics.length) * 100}%` }}
+                        title={`Mismatches: ${statistics.mismatches} (${((statistics.mismatches / statistics.length) * 100).toFixed(1)}%)`}
+                      ></div>
+                      <div
+                        className="bg-red-500 h-full"
+                        style={{ width: `${(statistics.gaps / statistics.length) * 100}%` }}
+                        title={`Gaps: ${statistics.gaps} (${((statistics.gaps / statistics.length) * 100).toFixed(1)}%)`}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs mt-1">
+                      <span className="text-green-400">Matches ({statistics.matches} - {((statistics.matches / statistics.length) * 100).toFixed(1)}%)</span>
+                      <span className="text-yellow-400">Mismatches ({statistics.mismatches} - {((statistics.mismatches / statistics.length) * 100).toFixed(1)}%)</span>
+                      <span className="text-red-400">Gaps ({statistics.gaps} - {((statistics.gaps / statistics.length) * 100).toFixed(1)}%)</span>
+                    </div>
+                  </div>
+
+                  {/* Informações detalhadas sobre os gaps */}
+                  <div className="mt-4 p-3 bg-gray-700/30 rounded-lg">
+                    <p className="text-sm font-semibold mb-2">Gap Details:</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <p className="text-gray-400">Seq 1 Gaps:</p>
+                        <p className="font-mono">{statistics.gapDistribution.gapsInSeq1}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Seq 2 Gaps:</p>
+                        <p className="font-mono">{statistics.gapDistribution.gapsInSeq2}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visualização das regiões conservadas */}
+                  {statistics.conservedRegionsDetails.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm font-semibold mb-2">Conserved Regions:</p>
+                      <div className="relative w-full h-6 bg-gray-700 rounded-lg overflow-hidden">
+                        {/* Barra de escala representando o comprimento total do alinhamento */}
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gray-500"></div>
+
+                        {/* Regiões conservadas como blocos verdes */}
+                        {statistics.conservedRegionsDetails.map((region, index) => (
+                          <div
+                            key={index}
+                            className="absolute h-full bg-green-600/60"
+                            style={{
+                              left: `${(region.start / statistics.length) * 100}%`,
+                              width: `${(region.length / statistics.length) * 100}%`
+                            }}
+                            title={`Region ${index + 1}: Positions ${region.start + 1}-${region.end + 1} (${region.length} positions)`}
+                          />
+                        ))}
+
+                        {/* Indicadores de posição a cada 25% */}
+                        <div className="absolute bottom-0 left-1/4 h-2 w-0.5 bg-gray-400"></div>
+                        <div className="absolute bottom-0 left-2/4 h-2 w-0.5 bg-gray-400"></div>
+                        <div className="absolute bottom-0 left-3/4 h-2 w-0.5 bg-gray-400"></div>
+                      </div>
+                      <div className="flex justify-between text-xs mt-1 text-gray-400">
+                        <span>0</span>
+                        <span>{Math.floor(statistics.length * 0.25)}</span>
+                        <span>{Math.floor(statistics.length * 0.5)}</span>
+                        <span>{Math.floor(statistics.length * 0.75)}</span>
+                        <span>{statistics.length}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
