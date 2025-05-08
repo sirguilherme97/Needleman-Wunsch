@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "Needleman-Wunsch Algorithm",
     description: "Explore the Needleman-Wunsch algorithm, a powerful global sequence alignment technique widely used in bioinformatics and genetic sequence analysis. Discover how this efficient and flexible algorithm can be applied to compare and find similarities between DNA, RNA, or protein sequences. Delve deeper into this fundamental method for understanding molecular evolution and genetic structure, and discover its applications in diverse areas of science and biomedical research.",
   },
-  const keywords = [
+  keywords:[
   // 🇧🇷 Brasil - Português
   "Needleman-Wunsch",
   "Algoritmo Needleman-Wunsch",
@@ -86,7 +86,7 @@ export const metadata: Metadata = {
   "Needleman-Wunsch Algorithm Explained",
   "تحليل Needleman-Wunsch",
   "Needleman-Wunsch التوافق الجيني"
-];
+],
 
   description: "Explore the Needleman-Wunsch algorithm, a powerful global sequence alignment technique widely used in bioinformatics and genetic sequence analysis. Discover how this efficient and flexible algorithm can be applied to compare and find similarities between DNA, RNA, or protein sequences. Delve deeper into this fundamental method for understanding molecular evolution and genetic structure, and discover its applications in diverse areas of science and biomedical research.",
 };
