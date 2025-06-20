@@ -101,8 +101,7 @@ export default function RootLayout({
       <head>
         <meta name="google-adsense-account" content="ca-pub-2325936665567762" />
         <link rel="icon" href="/favicon.ico" />
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2325936665567762"
-     crossorigin="anonymous"></script>
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2325936665567762" crossOrigin="anonymous"></script>
       </head>
       <Analytics />
       <body className={inter.className}>{children}</body>
