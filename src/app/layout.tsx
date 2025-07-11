@@ -3,16 +3,17 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 import { Analytics } from "@vercel/analytics/react"
+import AdSenseScript from "../components/AdSenseScript";
 
 export const metadata: Metadata = {
-  title: "Needleman-Wunsch Algorithm",
+  title: "Needleman-Wunsch Algorithm - Sequence Alignment Tool",
   metadataBase: new URL(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"),
   openGraph: {
-    title: "Needleman-Wunsch Algorithm",
-    description: "Explore o algoritmo de Needleman-Wunsch, uma poderosa técnica de alinhamento global de sequências amplamente utilizada em bioinformática e análise de sequências genéticas. Descubra como este algoritmo eficiente e flexível pode ser aplicado para comparar e encontrar similaridades entre sequências de DNA, RNA ou proteínas. Aprofunde-se neste método fundamental para entender a evolução molecular e a estrutura genética, e descubra suas aplicações em diversas áreas da ciência e da pesquisa biomédica.",
+    title: "Needleman-Wunsch Algorithm - Sequence Alignment Tool",
+    description: "Professional bioinformatics tool for global sequence alignment. Compare DNA, RNA, and protein sequences using the Needleman-Wunsch algorithm. Free online tool for researchers and students.",
   },
-  keywords: ["Needleman-Wunsch", "Needleman-Wunsch Algorithm", "Algorithm Needleman-Wunsch", "Alinhamento Sequencial Proteina", "Algorithm Alinhamento Sequencial", "Alinhamento Needleman-Wunsch"],
-  description: "Explore o algoritmo de Needleman-Wunsch, uma poderosa técnica de alinhamento global de sequências amplamente utilizada em bioinformática e análise de sequências genéticas. Descubra como este algoritmo eficiente e flexível pode ser aplicado para comparar e encontrar similaridades entre sequências de DNA, RNA ou proteínas. Aprofunde-se neste método fundamental para entender a evolução molecular e a estrutura genética, e descubra suas aplicações em diversas áreas da ciência e da pesquisa biomédica.",
+  keywords: ["Needleman-Wunsch", "sequence alignment", "bioinformatics", "DNA alignment", "protein alignment", "global alignment", "algorithm", "bioinformatics tools", "molecular biology", "computational biology"],
+  description: "Professional bioinformatics tool for global sequence alignment. Compare DNA, RNA, and protein sequences using the Needleman-Wunsch algorithm. Free online tool for researchers and students in molecular biology and computational biology.",
 };
 
 export default function RootLayout({
@@ -25,9 +26,15 @@ export default function RootLayout({
       <head>
         <meta name="google-adsense-account" content="ca-pub-2325936665567762" />
         <link rel="icon" href="/favicon.ico" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="RGB Logic" />
       </head>
-      <Analytics />
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <AdSenseScript />
+        <Analytics />
+        {children}
+      </body>
     </html>
   );
 }

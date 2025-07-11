@@ -81,10 +81,10 @@ function InfoPageContent() {
   const [highlightAlignmentIndices, setHighlightAlignmentIndices] = useState<number[]>([])
   const [thresholdValue, setThresholdValue] = useState<number>(0)
   const [patternType, setPatternType] = useState<'matches' | 'mismatches' | 'gaps' | 'positive' | 'negative'>('matches')
-  const [isMatrixCollapsed, setIsMatrixCollapsed] = useState(false)
+  const [isMatrixCollapsed, setIsMatrixCollapsed] = useState(true)
   const [collapsedRange, setCollapsedRange] = useState<{ start: number, end: number, size: number }>({ start: 0, end: 0, size: 10 })
   const [showRangeSelector, setShowRangeSelector] = useState(false)
-  const [renderingChunks, setRenderingChunks] = useState(true)
+  const [renderingChunks, setRenderingChunks] = useState(false)
   const [chunkSize, setChunkSize] = useState(50)
   const [renderedChunks, setRenderedChunks] = useState<number[]>([0])
   const [isChunkLoading, setIsChunkLoading] = useState(false)
@@ -153,11 +153,34 @@ function InfoPageContent() {
     // Função para renderizar chunks iniciais
     if (scoreMatrix.length > 0) {
       const totalChunks = Math.ceil(scoreMatrix.length / chunkSize);
-      // Inicialmente, renderizar apenas o primeiro chunk
-      setRenderedChunks([0]);
-      setRenderingChunks(totalChunks > 1);
+
+      // Since renderingChunks starts as false, load all chunks initially
+      if (!renderingChunks) {
+        const allChunks = Array.from({ length: totalChunks }, (_, i) => i);
+        setRenderedChunks(allChunks);
+      } else {
+        // If progressive loading is somehow enabled, start with first chunk only
+        setRenderedChunks([0]);
+      }
+
+      // Initialize collapsed range when matrix is ready (since we start with collapsed=true)
+      if (scoreMatrix.length > 10) {
+        const midPoint = Math.floor(scoreMatrix.length / 2);
+        const halfSize = Math.min(5, Math.floor(scoreMatrix.length / 4));
+        setCollapsedRange({
+          start: Math.max(0, midPoint - halfSize),
+          end: Math.min(scoreMatrix.length - 1, midPoint + halfSize),
+          size: halfSize * 2 + 1
+        });
+      } else {
+        setCollapsedRange({
+          start: 0,
+          end: scoreMatrix.length - 1,
+          size: scoreMatrix.length
+        });
+      }
     }
-  }, [scoreMatrix, chunkSize]);
+  }, [scoreMatrix, chunkSize, renderingChunks]);
 
   // Função para carregar o próximo chunk
   const loadNextChunk = () => {
@@ -907,9 +930,7 @@ function InfoPageContent() {
                 {renderingChunks && <span className="text-xs">({renderedChunks.length * chunkSize}/{scoreMatrix.length})</span>}
               </button>
             )}
-            {(!isMatrixCollapsed || renderingChunks) && (
-              <span className='text-xs text-gray-400'>* I recommend using Collapsed and Progressive Loading</span>
-            )}
+            <span className='text-xs text-gray-400'>* I recommend using progressive and collapsed loading<br/> as some computers may struggle to render large arrays.</span>
           </div>
 
           {isMatrixCollapsed && (
@@ -1268,7 +1289,7 @@ function InfoPageContent() {
                     onClick={() => setHighlightAlignmentIndices([])}
                     className="ml-2 px-2 py-0.5 text-xs rounded bg-gray-700 hover:bg-gray-600"
                   >
-                    Limpar
+                    Clear
                   </button>
                 </div>
               )}
@@ -1797,7 +1818,7 @@ function InfoPageContent() {
               {/* Adicionando informações sobre regiões */}
               <div className="mt-4 grid grid-cols-1 gap-2 ">
                 {/* Análise de regiões */}
-              
+
               </div>
             </div>
 
@@ -1909,11 +1930,11 @@ function InfoPageContent() {
                   >
                     <option value="0">Divisions...</option>
                     <option value="2">2 parts</option>
-                    <option value="3">3 parts</option>
-                    <option value="4">4 parts</option>
-                    <option value="5">5 parts</option>
-                    <option value="8">8 parts</option>
-                    <option value="10">10 parts</option>
+                    <option value="3">4 parts</option>
+                    <option value="4">6 parts</option>
+                    <option value="5">8 parts</option>
+                    <option value="8">14 parts</option>
+                    <option value="10">18 parts</option>
                   </select>
                 </>
               )}

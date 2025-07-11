@@ -2,6 +2,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import React, { useState, useEffect } from "react";
 import NeedlemanWunschAlignment from "../components/Script"; // Make sure to correctly import the NeedlemanWunschAlignment component
+import AdSenseAd from "../components/AdSenseAd";
 
 export default function AlignmentContainer() {
     const [seq1, setSeq1] = useState("");
@@ -62,6 +63,16 @@ export default function AlignmentContainer() {
     return (
         <>
             <div className="w-screen bg-gradient-to-l from-cyan-950 to-black h-auto pt-5 flex flex-col items-center justify-start text-white">
+                {/* Top Ad Banner */}
+                <div className="w-full max-w-4xl px-4 mb-4">
+                    <AdSenseAd 
+                        adSlot="1234567890"
+                        adFormat="horizontal"
+                        className="text-center"
+                        style={{ display: 'block', minHeight: '90px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                    />
+                </div>
+                
                 <h1 className="text-white font-bold text-lg md:text-xl lg:text-2xl">Needleman-Wunsch Algorithm</h1>
                 <h2 className="text-white font-medium text-md md:text-lg">Sequence Alignment</h2>
                 <div className="w-full max-w-2xl p-4 sm:p-6 rounded-lg shadow-lg">
@@ -134,6 +145,17 @@ export default function AlignmentContainer() {
                         mismatchPenalty={mismatchPenalty}
                     />
                 </div>
+                
+                {/* Middle Ad - Square/Rectangle */}
+                <div className="w-full max-w-2xl px-4 my-8">
+                    <AdSenseAd 
+                        adSlot="0987654321"
+                        adFormat="rectangle"
+                        className="text-center"
+                        style={{ display: 'block', minHeight: '250px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                    />
+                </div>
+                
                 <div className="text-[#ededed] cursor-default grid grid-cols-1 md:grid-cols-2 pt-10 max-w-xl md:max-w-none px-5 md:px-10 md:py-32 bg-[#0e0e0e]/90 w-full h-auto">
 
                     <div className="col-span-2 md:col-span-1 sm:mr-2">
@@ -223,9 +245,22 @@ export default function AlignmentContainer() {
                             <p className="mt-5 text-sm">InterPro is a database that provides integrated protein classifications, grouping proteins into families and predicting domains and binding sites from their sequences. Using various bioinformatics tools and resources, InterPro aids in the functional and structural analysis of proteins, facilitating the understanding of their biological functions and interactions.</p>
                         </div>
                     </div>
+                    
+                    {/* Bottom Ad */}
+                    <div className="col-span-2 flex justify-center py-10">
+                        <div className="w-full max-w-4xl">
+                            <AdSenseAd 
+                                adSlot="1122334455"
+                                adFormat="horizontal"
+                                className="text-center"
+                                style={{ display: 'block', minHeight: '90px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                            />
+                        </div>
+                    </div>
                 </div>
                 <div className="w-full bg-gradient-to-t from-cyan-950 to-[#0e0e0e] h-full px-5 md:px-10 py-5 text-white flex items-center justify-center gap-1 sm:gap-5">
                     <h1 className="text-xs md:text-md">© 2024-2030 RGB Logic - All Rights Reserved</h1>
+                    <a className="underline hover:text-blue-500 transition-all" href="/privacy">Privacy Policy</a>
                     <a className="underline hover:text-blue-500 transition-all" href="https://github.com/sirguilherme97/" target="blank">Github</a>
                 </div>
             </div>
